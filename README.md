@@ -39,7 +39,8 @@ Put images like 0.jpg .. 16.jpg in fixtures and run `rake test` then you should 
 1. Migration files
 2. View examples
 3. Similarity search
-4. Speed optimization
+4. Color generation speed optimization
+5. Search speed optimization
 
 ## Contributing
 
