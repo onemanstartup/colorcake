@@ -4,8 +4,6 @@ require "colorcake/merge_colors_methods"
 require 'matrix'
 require 'rmagick'
 
-
-
 module Colorcake
   @base_colors = %w(660000 cc0000 ea4c88 993399 663399 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 ff6600 c8ad7f 996633 663300 000000 999999 cccccc ffffff)
   @colors_count = 32
@@ -24,7 +22,7 @@ module Colorcake
     colors = {}
     colors_hex = {}
     image = image.white_threshold(@white_threshold).black_threshold(@black_threshold)
-    image= image.quantize(@colors_count, Magick::SRGBColorspace)
+    image = image.quantize(@colors_count, Magick::SRGBColorspace)
     palette = image.color_histogram #.sort {|a, b| b[1] <=> a[1]}
     image.destroy!
     sum_of_pixels = sum_of_hash(palette)

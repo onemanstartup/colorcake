@@ -1,4 +1,10 @@
 module ColorUtil
+  PIP2 = Math::PI / 2
+  GAMMA = 3
+  Y0    = 100
+  Ah_inc = 0.16
+  Al = 1.4456
+
   def self.rgb_from_string(string)
     color = []
     oc = 0
@@ -66,11 +72,6 @@ module ColorUtil
     # s 0...100
     # v 0...100
   end
-  PIP2 = Math::PI / 2
-  GAMMA = 3
-  Y0    = 100
-  Ah_inc = 0.16
-  Al = 1.4456
 
   def self.rgb_to_hcl(r,g,b)
     rg = r - g
@@ -127,44 +128,45 @@ module ColorUtil
   end
 
   def self.to_hsl(r,g,b)
-var_R = ( r / 255 )                     # RGB from 0 to 255
-var_G = ( g / 255 )
-var_B = ( b / 255 )
+    var_R = ( r / 255 )                     # RGB from 0 to 255
+    var_G = ( g / 255 )
+    var_B = ( b / 255 )
 
-var_Min = [var_R, var_G, var_B].min    # Min. value of RGB
-var_Max = [var_R, var_G, var_B].max    # Max. value of RGB
-del_Max = var_Max - var_Min             # Delta RGB value
+    var_Min = [var_R, var_G, var_B].min    # Min. value of RGB
+    var_Max = [var_R, var_G, var_B].max    # Max. value of RGB
+    del_Max = var_Max - var_Min             # Delta RGB value
 
-l = ( var_Max + var_Min ) / 2
+    l = ( var_Max + var_Min ) / 2
 
-if ( del_Max == 0 )                     # This is a gray, no chroma...
-  h = 0                                # HSL results from 0 to 1
-  s = 0
-else                                    # hromatic data...
-  if ( l < 0.5 )
-    s = del_Max / ( var_Max + var_Min )
-  else
-    s = del_Max / ( 2 - var_Max - var_Min )
-  end
-  del_R = ( ( ( var_Max - var_R ) / 6 ) + ( del_Max / 2 ) ) / del_Max
-  del_G = ( ( ( var_Max - var_G ) / 6 ) + ( del_Max / 2 ) ) / del_Max
-  del_B = ( ( ( var_Max - var_B ) / 6 ) + ( del_Max / 2 ) ) / del_Max
+    if ( del_Max == 0 )                     # This is a gray, no chroma...
+      h = 0                                # HSL results from 0 to 1
+      s = 0
+    else                                    # hromatic data...
+      if ( l < 0.5 )
+        s = del_Max / ( var_Max + var_Min )
+      else
+        s = del_Max / ( 2 - var_Max - var_Min )
+      end
+      del_R = ( ( ( var_Max - var_R ) / 6 ) + ( del_Max / 2 ) ) / del_Max
+      del_G = ( ( ( var_Max - var_G ) / 6 ) + ( del_Max / 2 ) ) / del_Max
+      del_B = ( ( ( var_Max - var_B ) / 6 ) + ( del_Max / 2 ) ) / del_Max
 
-  if      ( var_R == var_Max )
-    h = del_B - del_G
-  elsif ( var_G == var_Max )
-    h = ( 1 / 3 ) + del_R - del_B
-  elsif ( var_B == var_Max )
-    h = ( 2 / 3 ) + del_G - del_R
+      if      ( var_R == var_Max )
+        h = del_B - del_G
+      elsif ( var_G == var_Max )
+        h = ( 1 / 3 ) + del_R - del_B
+      elsif ( var_B == var_Max )
+        h = ( 2 / 3 ) + del_G - del_R
+      end
+      if ( h < 0 )
+        h += 1
+      end
+      if ( h > 1 )
+        h -= 1
+      end
+    end
   end
-  if ( h < 0 )
-    h += 1
-  end
-  if ( h > 1 )
-    h -= 1
-  end
-end
-  end
+
   private
 
   def self.rad2deg(r)
