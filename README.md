@@ -1,6 +1,6 @@
 # Colorcake
 
-TODO: Write a gem description
+Find colors and generate palette. So you can show palette and search models by color
 
 ## Installation
 
@@ -17,8 +17,29 @@ Or install it yourself as:
     $ gem install colorcake
 
 ## Usage
+1. Run
+    rails generate colorcake:install
+to install initializer.
+2. Add to your model include and method `image_path_for_color_generator`
+model should have character field `palette`
 
-TODO: Write usage instructions here
+      class Photo
+        include Colorable
+
+        def image_path_for_color_generator
+          image.big.path
+        end
+      end
+
+## Testing
+Put images like 0.jpg .. 16.jpg in fixtures and run `rake test` then you should see html files with generated colors and photos
+
+## TODO:
+
+1. Migration files
+2. View examples
+3. Similarity search
+4. Speed optimization
 
 ## Contributing
 

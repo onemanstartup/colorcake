@@ -1,4 +1,5 @@
 require_relative '../../lib/colorcake'
+Colorcake.configure {}
 def run
   files = Array(0..16)
   files.each_with_index do |file, index|

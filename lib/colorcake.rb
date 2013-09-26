@@ -5,12 +5,28 @@ require 'matrix'
 require 'rmagick'
 
 module Colorcake
-  @base_colors = %w(660000 cc0000 ea4c88 993399 663399 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 ff6600 c8ad7f 996633 663300 000000 999999 cccccc ffffff)
-  @colors_count = 32
-  @max_numbers_of_color_in_palette = 5
-  @white_threshold = 50000
-  @black_threshold = 1500
-  @fcmp_distance_value = 7000
+  require 'colorcake/engine' if defined?(Rails)
+  class << self
+    attr_accessor :configuration
+  end
+
+  def self.configure
+    self.configuration ||= Configuration.new
+    yield(configuration)
+  end
+
+  class Configuration
+    attr_accessor :base_colors, :colors_count, :max_numbers_of_color_in_palette, :white_threshold, :black_threshold, :fcmp_distance_value
+
+    def initialize
+      @base_colors ||= %w(660000 cc0000 ea4c88 993399 663399 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 ff6600 c8ad7f 996633 663300 000000 999999 cccccc ffffff)
+      @colors_count ||= 32
+      @max_numbers_of_color_in_palette ||= 5
+      @white_threshold ||= 50000
+      @black_threshold ||= 1500
+      @fcmp_distance_value ||= 7000
+    end
+  end
 
   @new_palette = []
   @old_palette = {}
@@ -21,8 +37,8 @@ module Colorcake
     image = ::Magick::ImageList.new(src)
     colors = {}
     colors_hex = {}
-    image = image.white_threshold(@white_threshold).black_threshold(@black_threshold)
-    image = image.quantize(@colors_count, Magick::SRGBColorspace)
+    image = image.white_threshold(configuration.white_threshold).black_threshold(configuration.black_threshold)
+    image = image.quantize(configuration.colors_count, Magick::SRGBColorspace)
     palette = image.color_histogram #.sort {|a, b| b[1] <=> a[1]}
     image.destroy!
     sum_of_pixels = sum_of_hash(palette)
@@ -49,9 +65,9 @@ module Colorcake
           s
         end
       }
-    b = c.join('').scan(/../).map {|color| color.to_i(16)}
+      b = c.join('').scan(/../).map {|color| color.to_i(16)}
       distances = {}
-      @base_colors.each do |color_20|
+      configuration.base_colors.each do |color_20|
         c20 = color_20.scan(/../).map {|color| color.to_i(16)}
         distances[color_20] = ColorUtil.distance_rgb( c20, b )
 
@@ -68,7 +84,7 @@ module Colorcake
 
       # Disable when not working with Database
       #id = SearchColor.where(color:distance[0]).first.id
-      id = @base_colors.index(c.join(''))
+      id = configuration.base_colors.index(c.join(''))
       colors[id] ||= {}
       colors[id][:search_color_id] ||= id
       colors[id][:search_factor] ||= []
@@ -89,10 +105,10 @@ module Colorcake
   end
 
   def self.create_palette(colors)
-    if colors.length > @max_numbers_of_color_in_palette
+    if colors.length > configuration.max_numbers_of_color_in_palette
       colors = slim_palette(colors)
       create_palette(colors)
-    elsif colors.length == @max_numbers_of_color_in_palette
+    elsif colors.length == configuration.max_numbers_of_color_in_palette
       return colors
     else
     end
@@ -111,7 +127,7 @@ module Colorcake
       common_colors[index] = []
       if index < palette.length - 1
         palette.each do |color|
-          if s[0].fcmp(color[0], @fcmp_distance_value, colorspace)
+          if s[0].fcmp(color[0], configuration.fcmp_distance_value, colorspace)
             common_colors[index] << color
             common_colors[index] << s
             common_colors[index].uniq!
