@@ -23,6 +23,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "awesome_print"
   spec.add_development_dependency "pry"
   spec.add_development_dependency "minitest"
+  spec.add_development_dependency "method_profiler"
 
   spec.add_dependency 'rmagick'
 end

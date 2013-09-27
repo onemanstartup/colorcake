@@ -6,19 +6,12 @@ require 'rmagick'
 
 module Colorcake
   require 'colorcake/engine' if defined?(Rails)
+
   class << self
-    attr_accessor :configuration
-  end
-
-  def self.configure
-    self.configuration ||= Configuration.new
-    yield(configuration)
-  end
-
-  class Configuration
     attr_accessor :base_colors, :colors_count, :max_numbers_of_color_in_palette, :white_threshold, :black_threshold, :fcmp_distance_value
 
-    def initialize
+    def configure(&blk)
+      class_eval(&blk)
       @base_colors ||= %w(660000 cc0000 ea4c88 993399 663399 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 ff6600 c8ad7f 996633 663300 000000 999999 cccccc ffffff)
       @colors_count ||= 32
       @max_numbers_of_color_in_palette ||= 5
@@ -34,57 +27,25 @@ module Colorcake
   def self.extract_colors(src, colorspace=::Magick::RGBColorspace)
     @new_palette = []
     @old_palette = {}
-    image = ::Magick::ImageList.new(src)
     colors = {}
     colors_hex = {}
-    image = image.white_threshold(configuration.white_threshold).black_threshold(configuration.black_threshold)
-    image = image.quantize(configuration.colors_count, Magick::SRGBColorspace)
-    palette = image.color_histogram #.sort {|a, b| b[1] <=> a[1]}
-    image.destroy!
-    sum_of_pixels = sum_of_hash(palette)
-    palette.each do |k,v|
-      palette[k] = [v, v/(sum_of_pixels.to_f/100)]
-    end
+    palette = compute_palette(src)
+    palette = color_quantity_in_image(palette)
     @old_palette = palette
     @new_palette = []
-    # Use Magick::HSLColorspace or Magick::SRGBColorspace
-    remove_common_color_from_palette(palette, Magick::RGBColorspace)
+    remove_common_color_from_palette(palette)
 
     (0..@new_palette.length-1).each do |i|
       c = @new_palette[i][0].to_s.split(',').map {|x| x[/\d+/]}
-      c.pop
-      c[0], c[1], c[2] = [c[0], c[1], c[2]].map { |s|
-        s = s.to_i
-        if s / 255 > 0 # not all ImageMagicks are created equal....
-          s = s / 257
-        end
-        s = s.to_s(16)
-        if s.size == 1
-          '0' + s
-        else
-          s
-        end
-      }
-      b = c.join('').scan(/../).map {|color| color.to_i(16)}
-      distances = {}
-      configuration.base_colors.each do |color_20|
-        c20 = color_20.scan(/../).map {|color| color.to_i(16)}
-        distances[color_20] = ColorUtil.distance_rgb( c20, b )
-
-        # ColorUtil.distance_hcl( ColorUtil.rgb_to_hcl( c16[0], c16[1], c16[2] ) , ColorUtil.rgb_to_hcl( b[0], b[1], b[2] ))
-      end
-      distances = distances.sort_by {|a,d| d}
+      b = compute_b(c)
+      distances = compute_distances(b)
       distance = distances.first
-      # colors['#' + c.join('')] = {r:b[0] , g:b[1] , b:b[2], hex_28: distance[0], distance_to_28: distance[1], hex:c.join('')} # @new_palette[i][1]
-      # colors['#' + c.join('')] = {search_color_id: SearchColor.find_by_color(distance[0]).id,
-      #                             search_factor: distance[1]
-      # } # @new_palette[i][1]
       percentage = @new_palette[i][1][1]
       colors_hex['#' + c.join('')] = @new_palette[i][1]
 
       # Disable when not working with Database
       #id = SearchColor.where(color:distance[0]).first.id
-      id = configuration.base_colors.index(c.join(''))
+      id = @base_colors.index(c.join(''))
       colors[id] ||= {}
       colors[id][:search_color_id] ||= id
       colors[id][:search_factor] ||= []
@@ -104,11 +65,13 @@ module Colorcake
     [colors, colors_hex]
   end
 
+
+
   def self.create_palette(colors)
-    if colors.length > configuration.max_numbers_of_color_in_palette
+    if colors.length > @max_numbers_of_color_in_palette
       colors = slim_palette(colors)
       create_palette(colors)
-    elsif colors.length == configuration.max_numbers_of_color_in_palette
+    elsif colors.length == @max_numbers_of_color_in_palette
       return colors
     else
     end
@@ -116,18 +79,63 @@ module Colorcake
 
   private
 
+  def self.compute_b(c)
+    c.pop
+    c[0], c[1], c[2] = [c[0], c[1], c[2]].map { |s|
+      s = s.to_i
+      if s / 255 > 0 # not all ImageMagicks are created equal....
+        s = s / 257
+      end
+      s = s.to_s(16)
+      if s.size == 1
+        '0' + s
+      else
+        s
+      end
+    }
+    c.join('').scan(/../).map {|color| color.to_i(16)}
+  end
+
+  def self.compute_distances(b)
+    distances = {}
+    @base_colors.each do |color_20|
+      c20 = color_20.scan(/../).map {|color| color.to_i(16)}
+      distances[color_20] = ColorUtil.distance_rgb( c20, b )
+      # ColorUtil.distance_hcl( ColorUtil.rgb_to_hcl( c16[0], c16[1], c16[2] ) , ColorUtil.rgb_to_hcl( b[0], b[1], b[2] ))
+    end
+    distances.sort_by {|a,d| d}
+  end
+
+  def self.color_quantity_in_image(palette)
+    sum_of_pixels = sum_of_hash(palette)
+    palette.each do |k,v|
+      palette[k] = [v, v/(sum_of_pixels.to_f/100)]
+    end
+    palette
+  end
+
+  def self.compute_palette(src_of_image)
+    image = ::Magick::ImageList.new(src_of_image)
+    image = image.white_threshold(@white_threshold).black_threshold(@black_threshold)
+    image = image.quantize(@colors_count, Magick::SRGBColorspace)
+    palette = image.color_histogram #.sort {|a, b| b[1] <=> a[1]}
+    image.destroy!
+    palette
+  end
+
   # Algorithm defines color preferabbility amongst others (for now it is only sum of place percentage)
   def self.generate_factor(array_of_vars)
     array_of_vars.inject{|sum, n| sum + n}.to_i
   end
 
-  def self.remove_common_color_from_palette(palette, colorspace)
+  # Use Magick::HSLColorspace or Magick::SRGBColorspace
+  def self.remove_common_color_from_palette(palette, colorspace=Magick::RGBColorspace)
     common_colors = []
     palette.each_with_index do |s, index|
       common_colors[index] = []
       if index < palette.length - 1
         palette.each do |color|
-          if s[0].fcmp(color[0], configuration.fcmp_distance_value, colorspace)
+          if s[0].fcmp(color[0], @fcmp_distance_value, colorspace)
             common_colors[index] << color
             common_colors[index] << s
             common_colors[index].uniq!
