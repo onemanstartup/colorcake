@@ -44,6 +44,8 @@ Put images like 0.jpg .. 16.jpg in fixtures and run `rake test` then you should 
 
 ## Contributing
 
+`ruby-prof test/functionals/image_generation_test.rb`
+
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)

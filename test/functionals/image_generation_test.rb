@@ -38,15 +38,6 @@ def run
     end
   end
 end
-# run
-require 'benchmark'
 profiler = MethodProfiler.observe(Colorcake)
-iterations = 10
-Benchmark.bm do |bm|
-  bm.report do
-    iterations.times do
-      Colorcake.extract_colors(Dir.pwd + "/fixtures/0.jpg")
-    end
-  end
-end
+run
 puts profiler.report
