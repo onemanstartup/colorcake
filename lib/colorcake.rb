@@ -74,6 +74,7 @@ module Colorcake
     elsif colors.length == @max_numbers_of_color_in_palette
       return colors
     else
+      {}
     end
   end
 
@@ -117,7 +118,7 @@ module Colorcake
   def self.compute_palette(src_of_image)
     image = ::Magick::ImageList.new(src_of_image)
     image = image.white_threshold(@white_threshold).black_threshold(@black_threshold)
-    image = image.quantize(@colors_count, Magick::SRGBColorspace)
+    image = image.quantize(@colors_count, Magick::RGBColorspace)
     palette = image.color_histogram #.sort {|a, b| b[1] <=> a[1]}
     image.destroy!
     palette
