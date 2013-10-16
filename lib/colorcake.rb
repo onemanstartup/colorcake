@@ -1,6 +1,6 @@
-require "colorcake/version"
-require "colorcake/color_util"
-require "colorcake/merge_colors_methods"
+require 'colorcake/version'
+require 'colorcake/color_util'
+require 'colorcake/merge_colors_methods'
 require 'matrix'
 require 'rmagick'
 
@@ -12,7 +12,8 @@ module Colorcake
 
     def configure(&blk)
       class_eval(&blk)
-      @base_colors ||= %w(660000 cc0000 ea4c88 993399 663399 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 ff6600 c8ad7f 996633 663300 000000 999999 cccccc ffffff)
+      # ffffff - is more like cccccc
+      @base_colors ||= %w(660000 cc0000 ea4c88 993399 663399 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 ff6600 c8ad7f 996633 663300 000000 999999 cccccc)
       @colors_count ||= 32
       @max_numbers_of_color_in_palette ||= 5
       @white_threshold ||= 50000
@@ -24,7 +25,7 @@ module Colorcake
   @new_palette = []
   @old_palette = {}
 
-  def self.extract_colors(src, colorspace=::Magick::RGBColorspace)
+  def self.extract_colors(src, colorspace = ::Magick::RGBColorspace)
     @new_palette = []
     @old_palette = {}
     colors = {}
@@ -35,8 +36,8 @@ module Colorcake
     @new_palette = []
     remove_common_color_from_palette(palette)
 
-    (0..@new_palette.length-1).each do |i|
-      c = @new_palette[i][0].to_s.split(',').map {|x| x[/\d+/]}
+    (0..@new_palette.length - 1).each do |i|
+      c = @new_palette[i][0].to_s.split(',').map { |x| x[/\d+/] }
       b = compute_b(c)
       distances = compute_distances(b)
       distance = distances.first
@@ -44,7 +45,7 @@ module Colorcake
       colors_hex['#' + c.join('')] = @new_palette[i][1]
 
       # Disable when not working with Database
-      #id = SearchColor.where(color:distance[0]).first.id
+      # id = SearchColor.where(color:distance[0]).first.id
       id = @base_colors.index(c.join(''))
       colors[id] ||= {}
       colors[id][:search_color_id] ||= id
@@ -62,10 +63,8 @@ module Colorcake
     end
     # Disable when not working with DB
     # [colors, colors_hex]
-    [colors, colors_hex]
+    [colors, colors_hex.keys]
   end
-
-
 
   def self.create_palette(colors)
     if colors.length > @max_numbers_of_color_in_palette
@@ -74,7 +73,8 @@ module Colorcake
     elsif colors.length == @max_numbers_of_color_in_palette
       return colors
     else
-      {}
+      colors = Color.expand_palette(colors)
+      Color.create_palette(colors)
     end
   end
 
@@ -94,23 +94,23 @@ module Colorcake
         s
       end
     }
-    c.join('').scan(/../).map {|color| color.to_i(16)}
+    c.join('').scan(/../).map { |color| color.to_i(16) }
   end
 
   def self.compute_distances(b)
     distances = {}
     @base_colors.each do |color_20|
-      c20 = color_20.scan(/../).map {|color| color.to_i(16)}
-      distances[color_20] = ColorUtil.distance_rgb( c20, b )
+      c20 = color_20.scan(/../).map { |color| color.to_i(16) }
+      distances[color_20] = ColorUtil.distance_rgb(c20, b)
       # ColorUtil.distance_hcl( ColorUtil.rgb_to_hcl( c16[0], c16[1], c16[2] ) , ColorUtil.rgb_to_hcl( b[0], b[1], b[2] ))
     end
-    distances.sort_by {|a,d| d}
+    distances.sort_by { |a, d| d }
   end
 
   def self.color_quantity_in_image(palette)
     sum_of_pixels = sum_of_hash(palette)
-    palette.each do |k,v|
-      palette[k] = [v, v/(sum_of_pixels.to_f/100)]
+    palette.each do |k, v|
+      palette[k] = [v, v / (sum_of_pixels.to_f / 100)]
     end
     palette
   end
@@ -119,18 +119,18 @@ module Colorcake
     image = ::Magick::ImageList.new(src_of_image)
     image = image.white_threshold(@white_threshold).black_threshold(@black_threshold)
     image = image.quantize(@colors_count, Magick::RGBColorspace)
-    palette = image.color_histogram #.sort {|a, b| b[1] <=> a[1]}
+    palette = image.color_histogram # .sort {|a, b| b[1] <=> a[1]}
     image.destroy!
     palette
   end
 
   # Algorithm defines color preferabbility amongst others (for now it is only sum of place percentage)
   def self.generate_factor(array_of_vars)
-    array_of_vars.inject{|sum, n| sum + n}.to_i
+    array_of_vars.reduce(:+).to_i
   end
 
   # Use Magick::HSLColorspace or Magick::SRGBColorspace
-  def self.remove_common_color_from_palette(palette, colorspace=Magick::RGBColorspace)
+  def self.remove_common_color_from_palette(palette, colorspace = Magick::RGBColorspace)
     common_colors = []
     palette.each_with_index do |s, index|
       common_colors[index] = []
@@ -161,19 +161,37 @@ module Colorcake
     end
   end
 
+  def self.expand_palette(colors)
+    col_array = colors.to_a
+    puts col_array.length
+    rgb_color_1 = ColorUtil.rgb_from_string(col_array[0][0])
+    rgb_color_2 = ColorUtil.rgb_from_string(col_array[-1][0])
+    if col_array.length == 1
+      rgb_color_2 = [rgb_color_1[0] + Random.new.rand(0..10), rgb_color_1[1] + Random.new.rand(0..20), rgb_color_1[2] + Random.new.rand(0..30)]
+    end
+
+    rgb =  [(rgb_color_1[0] + rgb_color_2[0]) / 2, (rgb_color_1[1] + rgb_color_2[1]) / 2, (rgb_color_1[2] + rgb_color_2[2]) / 2]
+    rgb.map! { |c| c.to_i.to_s(16) }
+    puts colors.inspect
+    puts colors.merge!({ '#' + rgb.join('') => [1, 2] }).inspect
+    colors.merge!({ '#' + rgb.join('') => [1, 2] })
+  end
+
   def self.slim_palette(colors)
+    puts colors.inspect
     col_array = colors.to_a
     matrix = Matrix.build(col_array.length, col_array.length) do |row, col|
+      puts col_array.inspect
       rgb_color_1 = ColorUtil.rgb_from_string(col_array[row][0])
       rgb_color_2 = ColorUtil.rgb_from_string(col_array[col][0])
       pixel_1 = [rgb_color_1[0], rgb_color_1[1], rgb_color_1[2]]
       pixel_2 = [rgb_color_2[0], rgb_color_2[1], rgb_color_2[2]]
       diff = ColorUtil.euclid_distance_rgb(pixel_1, pixel_2)
-      # c1 = ColorUtil.rgb_to_hcl(rgb_color_1[0], rgb_color_1[1], rgb_color_1[2])
-      # c2 = ColorUtil.rgb_to_hcl(rgb_color_2[0], rgb_color_2[1], rgb_color_2[2])
+      # c1 = ColorUtil.rgb_to_hcl(rgb_color_1[0],rgb_color_1[1],rgb_color_1[2])
+      # c2 = ColorUtil.rgb_to_hcl(rgb_color_2[0],rgb_color_2[1],rgb_color_2[2])
       # diff = ColorUtil.distance_hcl(c1, c2)
       if diff == 0
-        100000
+        100_000
       else
         diff
       end
@@ -189,7 +207,7 @@ module Colorcake
   def self.find_position_in_matrix_of_closest_color(matrix)
     matrix_array = matrix.to_a
     minimum = matrix_array.flatten.min
-    [i = matrix_array.index{|x| x.include? minimum}, matrix_array[i].index(minimum)]
+    [i = matrix_array.index { |x| x.include? minimum }, matrix_array[i].index(minimum)]
   end
 
   def self.sum_of_hash(hash)
