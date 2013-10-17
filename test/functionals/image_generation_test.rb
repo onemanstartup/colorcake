@@ -3,7 +3,7 @@ require 'method_profiler'
 
 Colorcake.configure {}
 def run
-  files = Array(0..16)
+  files = Array(0..12)
   files.each_with_index do |file, index|
     @new_palette = []
     @old_palette = {}
