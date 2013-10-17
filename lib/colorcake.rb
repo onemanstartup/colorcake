@@ -4,21 +4,38 @@ require 'colorcake/merge_colors_methods'
 require 'matrix'
 require 'rmagick'
 
+# Main class of functionality
 module Colorcake
   require 'colorcake/engine' if defined?(Rails)
 
   class << self
-    attr_accessor :base_colors, :colors_count, :max_numbers_of_color_in_palette, :white_threshold, :black_threshold, :fcmp_distance_value
+    attr_accessor :base_colors, :colors_count,
+                  :max_numbers_of_color_in_palette,
+                  :white_threshold, :black_threshold,
+                  :fcmp_distance_value
 
     def configure(&blk)
       class_eval(&blk)
       # ffffff - is more like cccccc
-      @base_colors ||= %w(660000 cc0000 ea4c88 993399 663399 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 ff6600 c8ad7f 996633 663300 000000 999999 cccccc)
+      @base_colors ||= %w(660000 cc0000 ea4c88 993399 663399 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 ff6600 c8ad7f 996633 663300 000000 999999 cccccc ffffff)
+      @extended_colors ||= %w(660000 990000 cc0000 cc3333 ea4c88 993399 663399 333399 0066cc 0099cc 66cccc 77cc33 669900 336600 666600 999900 cccc33 ffff00 ffcc33 ff9900 ff6600 cc6633 c8ad7f 996633 663300 000000 999999 cccccc ffffff )
+      @cluster_colors ||= { '990000' => '660000',
+                            'cc3333' => 'cc0000',
+                            '333399' => '663399',
+                            '0099cc' => '0066cc',
+                            '669900' => '77cc33',
+                            '666600' => '336600',
+                            '999900' => '336600',
+                            'ffff00' => 'cccc33',
+                            'ff9900' => 'ffcc33',
+                            'cc6633' => 'ff6600',
+                            'E8E8E8' => 'ffffff'
+                          }
       @colors_count ||= 32
       @max_numbers_of_color_in_palette ||= 5
-      @white_threshold ||= 50000
-      @black_threshold ||= 1500
-      @fcmp_distance_value ||= 7000
+      @white_threshold ||= 55_000
+      @black_threshold ||= 6_500
+      @fcmp_distance_value ||= 6_500
     end
   end
 
@@ -39,23 +56,26 @@ module Colorcake
     (0..@new_palette.length - 1).each do |i|
       c = @new_palette[i][0].to_s.split(',').map { |x| x[/\d+/] }
       b = compute_b(c)
-      distances = compute_distances(b)
-      distance = distances.first
+      closest_color = closest_color_to(b)
       percentage = @new_palette[i][1][1]
       colors_hex['#' + c.join('')] = @new_palette[i][1]
 
       # Disable when not working with Database
       # id = SearchColor.where(color:distance[0]).first.id
-      id = @base_colors.index(c.join(''))
+      id = @base_colors.index(closest_color[0])
       colors[id] ||= {}
       colors[id][:search_color_id] ||= id
       colors[id][:search_factor] ||= []
       colors[id][:search_factor] << percentage
       colors[id][:distance] ||= []
       colors[id][:hex] ||= c.join('')
-      if colors[id][:distance] == []
-        colors[id][:distance] = distance[1]
+      if id  && @base_colors[id] == '663399'
+        puts colors[id][:hex]
+        puts closest_color
+        puts closest_color_to(b)
       end
+      colors[id][:hex_of_base] ||= @base_colors[id] if id
+      colors[id][:distance] = closest_color[1] if colors[id][:distance] == []
     end
 
     colors.each_with_index do |fac, index|
@@ -82,29 +102,32 @@ module Colorcake
 
   def self.compute_b(c)
     c.pop
-    c[0], c[1], c[2] = [c[0], c[1], c[2]].map { |s|
+    c[0], c[1], c[2] = [c[0], c[1], c[2]].map do |s|
       s = s.to_i
-      if s / 255 > 0 # not all ImageMagicks are created equal....
-        s = s / 257
-      end
+      s = s / 257 if s / 255 > 0 # not all ImageMagicks are created equal....
       s = s.to_s(16)
       if s.size == 1
         '0' + s
       else
         s
       end
-    }
+    end
     c.join('').scan(/../).map { |color| color.to_i(16) }
   end
 
-  def self.compute_distances(b)
-    distances = {}
-    @base_colors.each do |color_20|
-      c20 = color_20.scan(/../).map { |color| color.to_i(16) }
-      distances[color_20] = ColorUtil.distance_rgb(c20, b)
-      # ColorUtil.distance_hcl( ColorUtil.rgb_to_hcl( c16[0], c16[1], c16[2] ) , ColorUtil.rgb_to_hcl( b[0], b[1], b[2] ))
+  def self.closest_color_to(b)
+    closest_colors = {}
+    @extended_colors.each do |extended_color|
+      extended_color_hex = ColorUtil.rgb_number_from_string(extended_color)
+      closest_colors[extended_color] = ColorUtil.distance_rgb(extended_color_hex, b)
     end
-    distances.sort_by { |a, d| d }
+    closest_color = closest_colors.sort_by { |a, d| d }.first
+    # bad name for variable
+    if @cluster_colors[closest_color[0]]
+      closest_color = [@cluster_colors[closest_color[0]],
+                        ColorUtil.distance_rgb_strings(@cluster_colors[closest_color[0]], closest_color[0]) ]
+    end
+    closest_color
   end
 
   def self.color_quantity_in_image(palette)
@@ -117,20 +140,22 @@ module Colorcake
 
   def self.compute_palette(src_of_image)
     image = ::Magick::ImageList.new(src_of_image)
-    image = image.white_threshold(@white_threshold).black_threshold(@black_threshold)
+    image = image.white_threshold(@white_threshold)
+    image = image.black_threshold(@black_threshold)
     image = image.quantize(@colors_count, Magick::RGBColorspace)
     palette = image.color_histogram # .sort {|a, b| b[1] <=> a[1]}
     image.destroy!
     palette
   end
 
-  # Algorithm defines color preferabbility amongst others (for now it is only sum of place percentage)
+  # Algorithm defines color preferabbility amongst others
+  # (for now it is only sum of place percentage)
   def self.generate_factor(array_of_vars)
     array_of_vars.reduce(:+).to_i
   end
 
   # Use Magick::HSLColorspace or Magick::SRGBColorspace
-  def self.remove_common_color_from_palette(palette, colorspace = Magick::RGBColorspace)
+  def self.remove_common_color_from_palette(palette, colorspace = Magick::SRGBColorspace)
     common_colors = []
     palette.each_with_index do |s, index|
       common_colors[index] = []
@@ -163,7 +188,6 @@ module Colorcake
 
   def self.expand_palette(colors)
     col_array = colors.to_a
-    puts col_array.length
     rgb_color_1 = ColorUtil.rgb_from_string(col_array[0][0])
     rgb_color_2 = ColorUtil.rgb_from_string(col_array[-1][0])
     if col_array.length == 1
@@ -172,16 +196,12 @@ module Colorcake
 
     rgb =  [(rgb_color_1[0] + rgb_color_2[0]) / 2, (rgb_color_1[1] + rgb_color_2[1]) / 2, (rgb_color_1[2] + rgb_color_2[2]) / 2]
     rgb.map! { |c| c.to_i.to_s(16) }
-    puts colors.inspect
-    puts colors.merge!({ '#' + rgb.join('') => [1, 2] }).inspect
     colors.merge!({ '#' + rgb.join('') => [1, 2] })
   end
 
   def self.slim_palette(colors)
-    puts colors.inspect
     col_array = colors.to_a
     matrix = Matrix.build(col_array.length, col_array.length) do |row, col|
-      puts col_array.inspect
       rgb_color_1 = ColorUtil.rgb_from_string(col_array[row][0])
       rgb_color_2 = ColorUtil.rgb_from_string(col_array[col][0])
       pixel_1 = [rgb_color_1[0], rgb_color_1[1], rgb_color_1[2]]

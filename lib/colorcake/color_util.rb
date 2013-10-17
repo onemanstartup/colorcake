@@ -21,13 +21,23 @@ module ColorUtil
     color
   end
 
-  def self.distance_rgb( rgb1, rgb2 )
-    (100)*Math.sqrt(( ( (rgb1[0]-rgb2[0])**2 +
-                       (rgb1[1]-rgb2[1])**2 +
-                       (rgb1[2]-rgb2[2])**2 ) ).abs)
+  def self.rgb_number_from_string(string)
+    string.scan(/../).map { |color| color.to_i(16) }
   end
 
-  def self.euclid_distance_rgb( rgb1, rgb2 )
+  def self.distance_rgb_strings(rgb1, rgb2)
+    distance_rgb(
+      rgb_number_from_string(rgb1),
+      rgb_number_from_string(rgb2))
+  end
+
+  def self.distance_rgb(rgb1, rgb2)
+    (100) * Math.sqrt(( ( (rgb1[0] - rgb2[0])**2 +
+                      (  rgb1[1] - rgb2[1])**2 +
+                      (rgb1[2] - rgb2[2])**2)).abs)
+  end
+
+  def self.euclid_distance_rgb(rgb1, rgb2)
     d = 0
     (0..rgb1.length-1).each do |i|
       d += (rgb1[i] - rgb2[i]) * (rgb1[i] - rgb2[i])
@@ -165,6 +175,11 @@ module ColorUtil
         h -= 1
       end
     end
+  end
+
+
+  def self.rgb_to_yuv(rgb)
+
   end
 
   private
