@@ -34,8 +34,8 @@ module Colorcake
       @colors_count ||= 32
       @max_numbers_of_color_in_palette ||= 5
       @white_threshold ||= 55_000
-      @black_threshold ||= 6_500
-      @fcmp_distance_value ||= 6_500
+      @black_threshold ||= 1_500
+      @fcmp_distance_value ||= 7_500
     end
   end
 
@@ -120,11 +120,12 @@ module Colorcake
     @extended_colors.each do |extended_color|
       extended_color_hex = ColorUtil.rgb_number_from_string(extended_color)
       delta = ColorUtil.delta_e(ColorUtil.rgb_to_lab(extended_color_hex), ColorUtil.rgb_to_lab(b))
+      ap ColorUtil.rgb_to_lab(b)
+      ap ColorUtil.rgb_to_lab(extended_color_hex)
+      ap delta
       closest_colors[extended_color] = delta
     end
     ap closest_colors
-    # qquick fix remmove
-    closest_colors['000000'] = 100
     closest_color = closest_colors.sort_by { |a, d| d }.first
     if closest_color[0] == '663399'
       ap closest_colors.sort_by { |a, d| d }
@@ -167,7 +168,7 @@ module Colorcake
   end
 
   # Use Magick::HSLColorspace or Magick::SRGBColorspace
-  def self.remove_common_color_from_palette(palette, colorspace = Magick::SRGBColorspace)
+  def self.remove_common_color_from_palette(palette, colorspace = Magick::RGBColorspace)
     common_colors = []
     palette.each_with_index do |s, index|
       common_colors[index] = []

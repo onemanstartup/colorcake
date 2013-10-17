@@ -196,7 +196,7 @@ module ColorUtil
     [y,v,u]
   end
 
-  def self.delta_e(one, other, method=:cmclc)
+  def self.delta_e(one, other, method=:cie94)
     # http://en.wikipedia.org/wiki/Color_difference
     # http://www.brucelindbloom.com/iPhone/ColorDiff.html
     l1, a1, b1 = one[0], one[1], one[2]
@@ -250,7 +250,7 @@ module ColorUtil
   Z_D65 = 1.0888
 
 
-  def self.rgb_to_lab(rgb)
+  def self.rgb_to_lab_bad(rgb)
     f_x = function_lab(rgb[0] / X_D65)
     f_y = function_lab(rgb[1] / Y_D65)
     f_z = function_lab(rgb[2] / Z_D65)
@@ -262,7 +262,40 @@ module ColorUtil
     [l, a, b]
   end
 
+  def self.rgb_to_lab(rgb)
+    r, g, b = normalize(rgb[0]),normalize(rgb[1]),normalize(rgb[2])
+
+    x =  0.436052025 * r + 0.385081593 * g + 0.143087414 * b
+    y =  0.222491598 * r + 0.71688606  * g + 0.060621486 * b
+    z =  0.013929122 * r + 0.097097002 * g + 0.71418547  * b
+
+    xr = x / 0.964221
+    yr = y
+    zr = z / 0.825211
+
+    eps = 216.0 / 24389
+    k = 24389.0 / 27
+
+    fx = xr > eps ? xr ** (1.0 / 3) : (k * xr + 16) / 116
+    fy = yr > eps ? yr ** (1.0 / 3) : (k * yr + 16) / 116
+    fz = zr > eps ? zr ** (1.0 / 3) : (k * zr + 16) / 116
+
+    l = ((116 * fy) - 16) #2.55 *
+    a = 500 * (fx - fy)
+    b = 200 * (fy - fz)
+
+    [l.round, a.round, b.round]
+  end
   private
+        def self.normalize(v)
+          v /= 255.0
+          if v <= 0.04045
+            v / 12
+          else
+            ( (v + 0.055) / 1.055) ** 2.4
+          end
+        end
+
 
   def self.rad2deg(r)
     (r/Math::PI)*180
