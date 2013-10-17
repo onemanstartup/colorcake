@@ -3,7 +3,7 @@ require 'colorcake/color_util'
 require 'colorcake/merge_colors_methods'
 require 'matrix'
 require 'rmagick'
-
+require 'awesome_print'
 # Main class of functionality
 module Colorcake
   require 'colorcake/engine' if defined?(Rails)
@@ -119,13 +119,25 @@ module Colorcake
     closest_colors = {}
     @extended_colors.each do |extended_color|
       extended_color_hex = ColorUtil.rgb_number_from_string(extended_color)
-      closest_colors[extended_color] = ColorUtil.distance_rgb(extended_color_hex, b)
+      delta = ColorUtil.delta_e(ColorUtil.rgb_to_lab(extended_color_hex), ColorUtil.rgb_to_lab(b))
+      closest_colors[extended_color] = delta
     end
+    ap closest_colors
+    # qquick fix remmove
+    closest_colors['000000'] = 100
     closest_color = closest_colors.sort_by { |a, d| d }.first
+    if closest_color[0] == '663399'
+      ap closest_colors.sort_by { |a, d| d }
+    end
     # bad name for variable
+    # if @cluster_colors[closest_color[0]]
+    #   closest_color = [@cluster_colors[closest_color[0]],
+    #                     ColorUtil.distance_rgb_strings(@cluster_colors[closest_color[0]], closest_color[0]) ]
+    # end
     if @cluster_colors[closest_color[0]]
       closest_color = [@cluster_colors[closest_color[0]],
-                        ColorUtil.distance_rgb_strings(@cluster_colors[closest_color[0]], closest_color[0]) ]
+                        ColorUtil.delta_e(ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(@cluster_colors[closest_color[0]])),
+                                               ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(closest_color[0]))) ]
     end
     closest_color
   end

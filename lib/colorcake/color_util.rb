@@ -33,8 +33,8 @@ module ColorUtil
 
   def self.distance_rgb(rgb1, rgb2)
     (100) * Math.sqrt(( ( (rgb1[0] - rgb2[0])**2 +
-                      (  rgb1[1] - rgb2[1])**2 +
-                      (rgb1[2] - rgb2[2])**2)).abs)
+                         (  rgb1[1] - rgb2[1])**2 +
+                         (rgb1[2] - rgb2[2])**2)).abs)
   end
 
   def self.euclid_distance_rgb(rgb1, rgb2)
@@ -178,8 +178,88 @@ module ColorUtil
   end
 
 
-  def self.rgb_to_yuv(rgb)
+  def self.rgb_to_yuv_2(rgb)
+    y  =  (0.257 * rgb[0]) + (0.504 * rgb[1]) + (0.098 * rgb[2]) + 16
+    # Cr
+    v =   (0.439 * rgb[0]) - (0.368 * rgb[1]) - (0.071 * rgb[2]) + 128
+    # Cb
+    u =  -(0.148 * rgb[0]) - (0.291 * rgb[1]) + (0.439 * rgb[2]) + 128
+    [y,v,u]
+  end
 
+  def self.rgb_to_yuv(rgb)
+    y  =  (0.299 * rgb[0]) + (0.587 * rgb[1]) + (0.114 * rgb[2])
+    # Cr
+    v =   (rgb[2] - y)*0.565
+    # Cb
+    u =   (rgb[0] - y)*0.713
+    [y,v,u]
+  end
+
+  def self.delta_e(one, other, method=:cmclc)
+    # http://en.wikipedia.org/wiki/Color_difference
+    # http://www.brucelindbloom.com/iPhone/ColorDiff.html
+    l1, a1, b1 = one[0], one[1], one[2]
+    l2, a2, b2 = other[0], other[1], other[2]
+    c1, c2 = lab_chroma(one[1], one[2]), lab_chroma(other[1], other[2])
+    h1, h2 = lab_hue(one[1], one[2]), lab_hue(other[1], other[2])
+    dl = l2 - l1
+    da = a1 - a2
+    db = b1 - b2
+    dc = c1 - c2
+    dh2 = da**2 + db**2 - dc**2
+    return 10000 if dh2 < 0
+    dh = Math::sqrt(dh2)
+    case method
+    when :density
+      dl.abs
+    when :cie76
+      Math::sqrt(dl**2 + da**2 + db**2)
+    when :cie94
+      kl, k1, k2 = 1, 0.045, 0.015
+      Math::sqrt(
+        (dl / kl)**2 +
+        (dc / (1 + k1*c1))**2 +
+        (dh / (1 + k2*c2)**2)
+      )
+    when :cmclc
+      l, c = 2, 1
+      sl = (l1 < 16) ?
+        0.511 :
+        0.040975 * l1 / (1 + 0.01765 * l1)
+      sc = 0.0638 * c1 / (1 + 0.0131 * c1) + 0.638
+      f = Math::sqrt(
+        (c1 ** 4) / ((c1 ** 4) + 1900)
+      )
+      t = (h1 >= 164 && h1 <= 345) ?
+        0.56 + (0.2 * Math.cos(deg2rad(h1 + 168))).abs :
+        0.36 + (0.4 * Math.cos(deg2rad(h1 + 35))).abs
+      sh = sc * ((f * t) + 1 - f)
+      Math::sqrt(
+        (dl / (l * sl)) ** 2 +
+        (dc / (c * sc)) ** 2 +
+        (dh / sh) ** 2
+      )
+    else
+      raise "Unknown deltaE method: #{method.inspect}"
+    end
+  end
+
+  X_D65 = 0.9504
+  Y_D65 = 1.0
+  Z_D65 = 1.0888
+
+
+  def self.rgb_to_lab(rgb)
+    f_x = function_lab(rgb[0] / X_D65)
+    f_y = function_lab(rgb[1] / Y_D65)
+    f_z = function_lab(rgb[2] / Z_D65)
+
+    l = 116 * f_y - 16
+    a = 500 * ( f_x - f_y )
+    b = 200 * ( f_y - f_z )
+
+    [l, a, b]
   end
 
   private
@@ -196,5 +276,27 @@ module ColorUtil
     return y < 0 ? -PIP2 : PIP2 if x == 0
     Math.atan(y/x)
   end
-end
 
+  def self.lab_chroma(a,b)
+    # http://www.brucelindbloom.com/Eqn_Lab_to_LCH.html
+    Math::sqrt((a * a) + (b * b))
+  end
+
+  def self.lab_hue(a, b)
+    # http://www.brucelindbloom.com/Eqn_Lab_to_LCH.html
+    if a == 0 && b == 0
+      0
+    else
+      rad2deg(Math::atan2(b, a)) % 360
+    end
+  end
+
+  def self.function_lab(t)
+    if t > 0.008856
+      t ** ( 1 / 3.0 )
+    else
+      7.787 * t + ( 4 / 29.0 )
+    end
+  end
+
+end
