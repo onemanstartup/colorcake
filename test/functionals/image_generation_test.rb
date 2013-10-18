@@ -3,7 +3,7 @@ require 'method_profiler'
 
 Colorcake.configure {}
 def run
-  files = Array(0..12)
+  files = Array(0..16)
   files.each_with_index do |file, index|
     @new_palette = []
     @old_palette = {}
@@ -29,7 +29,9 @@ def run
       if color[1][:hex_of_base] == 'ffffff'
         colorspace_test += "<div style='background: ##{color[1][:hex_of_base]}; border:1px solid red'></div>"
       else
-        colorspace_test += "<div style='background: ##{color[1][:hex_of_base]}'  > </div>"
+        if color[1][:distance].to_i < 25
+          colorspace_test += "<div style='background: ##{color[1][:hex_of_base]}'  > </div>"
+        end
       end
     end
     some += colorspace_test

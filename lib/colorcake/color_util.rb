@@ -196,7 +196,7 @@ module ColorUtil
     [y,v,u]
   end
 
-  def self.delta_e(one, other, method=:cie94)
+  def self.delta_e(one, other, method=:cie76)
     # http://en.wikipedia.org/wiki/Color_difference
     # http://www.brucelindbloom.com/iPhone/ColorDiff.html
     l1, a1, b1 = one[0], one[1], one[2]

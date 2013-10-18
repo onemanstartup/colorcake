@@ -1,6 +1,6 @@
-require 'colorcake/version'
-require 'colorcake/color_util'
-require 'colorcake/merge_colors_methods'
+require_relative 'colorcake/version'
+require_relative 'colorcake/color_util'
+require_relative 'colorcake/merge_colors_methods'
 require 'matrix'
 require 'rmagick'
 require 'awesome_print'
@@ -17,25 +17,26 @@ module Colorcake
     def configure(&blk)
       class_eval(&blk)
       # ffffff - is more like cccccc
-      @base_colors ||= %w(660000 cc0000 ea4c88 993399 663399 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 ff6600 c8ad7f 996633 663300 000000 999999 cccccc ffffff)
       @extended_colors ||= %w(660000 990000 cc0000 cc3333 ea4c88 993399 663399 333399 0066cc 0099cc 66cccc 77cc33 669900 336600 666600 999900 cccc33 ffff00 ffcc33 ff9900 ff6600 cc6633 c8ad7f 996633 663300 000000 999999 cccccc ffffff )
-      @cluster_colors ||= { '990000' => '660000',
-                            'cc3333' => 'cc0000',
-                            '333399' => '663399',
-                            '0099cc' => '0066cc',
-                            '669900' => '77cc33',
-                            '666600' => '336600',
-                            '999900' => '336600',
-                            'ffff00' => 'cccc33',
-                            'ff9900' => 'ffcc33',
-                            'cc6633' => 'ff6600',
-                            'E8E8E8' => 'ffffff'
+      @base_colors ||= @extended_colors
+      @cluster_colors ||= { '990000' => '990000',
+                            'cc3333' => 'cc3333',
+                            '333399' => '333399',
+                            '0099cc' => '0099cc',
+                            '669900' => '669900',
+                            '666600' => '666600',
+                            '999900' => '999900',
+                            'ffff00' => 'ffff00',
+                            'ff9900' => 'ff9900',
+                            'cc6633' => 'cc6633',
+                            'E8E8E8' => 'E8E8E8',
+                            'dde2e2' => 'ffffff'
                           }
-      @colors_count ||= 128
+      @colors_count ||= 20
       @max_numbers_of_color_in_palette ||= 5
       @white_threshold ||= 55_000
-      @black_threshold ||= 10500
-      @fcmp_distance_value ||= 5_500
+      @black_threshold ||= 2500
+      @fcmp_distance_value ||= 6_500
     end
   end
 
@@ -69,7 +70,7 @@ module Colorcake
       colors[id][:search_factor] << percentage
       colors[id][:distance] ||= []
       colors[id][:hex] ||= c.join('')
-      if id  && @base_colors[id] == '663399'
+      if id  && @base_colors[id] == '66cccc'
         puts colors[id][:hex]
         puts closest_color
         puts closest_color_to(b)
@@ -83,6 +84,7 @@ module Colorcake
     end
     # Disable when not working with DB
     # [colors, colors_hex]
+    ap colors
     [colors, colors_hex.keys]
   end
 
@@ -120,14 +122,10 @@ module Colorcake
     @extended_colors.each do |extended_color|
       extended_color_hex = ColorUtil.rgb_number_from_string(extended_color)
       delta = ColorUtil.delta_e(ColorUtil.rgb_to_lab(extended_color_hex), ColorUtil.rgb_to_lab(b))
-      ap ColorUtil.rgb_to_lab(b)
-      ap ColorUtil.rgb_to_lab(extended_color_hex)
-      ap delta
       closest_colors[extended_color] = delta
     end
-    ap closest_colors
     closest_color = closest_colors.sort_by { |a, d| d }.first
-    if closest_color[0] == '663399'
+    if closest_color[0] == '66cccc'
       ap closest_colors.sort_by { |a, d| d }
     end
     # bad name for variable
@@ -140,7 +138,11 @@ module Colorcake
                         ColorUtil.delta_e(ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(@cluster_colors[closest_color[0]])),
                                                ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(closest_color[0]))) ]
     end
-    closest_color
+    if closest_color[1] < 24
+      return closest_color
+    else
+      return closest_color[0] = 'ffffff'
+    end
   end
 
   def self.color_quantity_in_image(palette)
