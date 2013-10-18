@@ -31,11 +31,11 @@ module Colorcake
                             'cc6633' => 'ff6600',
                             'E8E8E8' => 'ffffff'
                           }
-      @colors_count ||= 32
+      @colors_count ||= 128
       @max_numbers_of_color_in_palette ||= 5
       @white_threshold ||= 55_000
-      @black_threshold ||= 1_500
-      @fcmp_distance_value ||= 7_500
+      @black_threshold ||= 10500
+      @fcmp_distance_value ||= 5_500
     end
   end
 
