@@ -51,11 +51,11 @@ module Colorcake
 'cad3d5' => 'ffffff'
 
                           }
-      @colors_count ||= 50
+      @colors_count ||= 64
       @max_numbers_of_color_in_palette ||= 5
       @white_threshold ||= 55_000
       @black_threshold ||= 1500
-      @fcmp_distance_value ||= 7_500
+      @fcmp_distance_value ||= 5_500
     end
   end
 
