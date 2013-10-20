@@ -16,8 +16,6 @@ module Colorcake
 
     def configure(&blk)
       class_eval(&blk)
-      # ffffff - is more like cccccc
-      # @extended_colors ||= %w(ce454c efd848 1a3672 660000 990000 cc0000 cc3333 ea4c88 993399 663399 333399 0066cc 0099cc 66cccc 77cc33 669900 336600 666600 999900 cccc33 ffff00 ffcc33 ff9900 ff6600 cc6633 c8ad7f 996633 663300 000000 999999 cccccc ffffff )
       @base_colors ||= %w(660000 cc0000 ea4c88 993399 663399 304961 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 fff533 ff6600 c8ad7f 996633 663300 000000 999999 cccccc ffffff)
       @cluster_colors ||= {
                             '660000' => '660000',
@@ -71,7 +69,6 @@ module Colorcake
     colors_hex = {}
     palette = compute_palette(src)
     palette = color_quantity_in_image(palette)
-    # ap palette
     @old_palette = palette
     @new_palette = []
     remove_common_color_from_palette(palette)
@@ -97,12 +94,6 @@ module Colorcake
       colors[id][:hex] ||= c.join('')
       colors[id][:hex_of_base] ||= @base_colors[id] if id
       colors[id][:distance] = closest_color[1] if colors[id][:distance] == []
-      # if id  && @base_colors[id] == 'ffffff'
-      #   puts "приблеженные цвета"
-      #   ap colors[id]
-      #   puts closest_color
-      #   puts closest_color_to(b)
-      # end
     end
 
     colors.each_with_index do |fac, index|
@@ -111,7 +102,6 @@ module Colorcake
     # Disable when not working with DB
     # [colors, colors_hex]
     colors.delete_if {|k,v| colors[k][:search_factor] < 1}
-    # ap colors
     [colors, colors_hex.keys]
   end
 
@@ -152,25 +142,12 @@ module Colorcake
       closest_colors[extended_color] = delta
     end
     closest_color = closest_colors.sort_by { |a, d| d }.first
-    if closest_color[0] == '66cccc'
-      # ap closest_colors.sort_by { |a, d| d }
-    end
-    # bad name for variable
-    # if @cluster_colors[closest_color[0]]
-    #   closest_color = [@cluster_colors[closest_color[0]],
-    #                     ColorUtil.distance_rgb_strings(@cluster_colors[closest_color[0]], closest_color[0]) ]
-    # end
     if @cluster_colors[closest_color[0]]
       closest_color = [@cluster_colors[closest_color[0]],
                         ColorUtil.delta_e(ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(@cluster_colors[closest_color[0]])),
-                                               ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(closest_color[0]))) ]
+                                          ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(closest_color[0]))) ]
     end
     closest_color
-    # if closest_color[1] < 26
-    #   return closest_color
-    # else
-    #   return closest_color[0] = 'ffffff'
-    # end
   end
 
   def self.color_quantity_in_image(palette)
@@ -214,7 +191,6 @@ module Colorcake
             elsif common_colors[index].first[1][1] == color[1][1]
               common_colors[index].first[1][1] = color[1][1]
             else
-              ap 'ololo'
             end
           end
         end
