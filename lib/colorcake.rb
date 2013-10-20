@@ -162,7 +162,7 @@ module Colorcake
     image = ::Magick::ImageList.new(src_of_image)
     image = image.white_threshold(@white_threshold)
     image = image.black_threshold(@black_threshold)
-    image = image.quantize(@colors_count, Magick::SRGBColorspace)
+    image = image.quantize(@colors_count, Magick::YIQColorspace)
     palette = image.color_histogram # .sort {|a, b| b[1] <=> a[1]}
     image.destroy!
     palette
@@ -175,7 +175,7 @@ module Colorcake
   end
 
   # Use Magick::HSLColorspace or Magick::SRGBColorspace
-  def self.remove_common_color_from_palette(palette, colorspace = Magick::RGBColorspace)
+  def self.remove_common_color_from_palette(palette, colorspace = Magick::YIQColorspace)
     common_colors = []
     palette.each_with_index do |s, index|
       common_colors[index] = []
