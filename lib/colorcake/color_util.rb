@@ -61,7 +61,8 @@ module ColorUtil
     c = q * ( rg.abs + gb.abs + br.abs ) / 3
     h = rad2deg( atan( gb, rg ) )
 
-    # The paper uses 180, not 90, but using 180 gives
+    # The pa        ap id
+    # ap per uses 180, not 90, but using 180 gives
     # red the same HCL value as green...
     #   Alternative A
     #    $H = 90 + $H         if $rg <  0 && $gb >= 0;

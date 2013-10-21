@@ -23,7 +23,7 @@ module Colorcake
                             'ea4c88' => 'ea4c88',
                             '993399' => '993399',
                             '663399' => '663399',
-                            '304961' => '304961', '405672' => '304961',
+                            '304961' => '304961', '405672' => '304961', '123b61' => '304961',
                             '0066cc' => '0066cc', '1a3672' => '0066cc', '333399' => '0066cc', '0099cc' => '0066cc',
                             '66cccc' => '66cccc',
                             '77cc33' => '77cc33',
@@ -82,6 +82,10 @@ module Colorcake
       # Disable when not working with Database
       # id = SearchColor.where(color:distance[0]).first.id
       id = @base_colors.index(closest_color[0])
+      if id && @base_colors[id] == '0066cc'
+        ap c.join('')
+        ap b
+      end
       unless id
         ap 'отсутсвует id'
         ap closest_color[0]
@@ -175,13 +179,21 @@ module Colorcake
   end
 
   # Use Magick::HSLColorspace or Magick::SRGBColorspace
-  def self.remove_common_color_from_palette(palette, colorspace = Magick::YIQColorspace)
+  def self.remove_common_color_from_palette(palette, colorspace = Magick::HCLColorspace)
     common_colors = []
     palette.each_with_index do |s, index|
       common_colors[index] = []
       if index < palette.length
         palette.each do |color|
-          if s[0].fcmp(color[0], @fcmp_distance_value, colorspace)
+          sr = s[0].red / 257 if s[0].red / 255 > 0
+          sb = s[0].blue / 257 if s[0].blue / 255 > 0
+          sg = s[0].green / 257 if s[0].green / 255 > 0
+          cr = color[0].red / 257 if color[0].red / 255 > 0
+          cb = color[0].blue / 257 if color[0].blue / 255 > 0
+          cg = color[0].green / 257 if color[0].green / 255 > 0
+          delta =  ColorUtil.delta_e(ColorUtil.rgb_to_lab([sr, sb, sg]),
+                                          ColorUtil.rgb_to_lab([cr, cb, cg]))
+          if delta < 5
             common_colors[index] << color
             common_colors[index] << s
             common_colors[index].uniq!
