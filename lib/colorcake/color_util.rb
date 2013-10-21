@@ -45,7 +45,8 @@ module ColorUtil
     Math.sqrt(d)
   end
 
-  def self.rgb_to_hcl(r,g,b)
+  def self.rgb_to_hcl(rgb)
+    r, g, b = *rgb
     rg = r - g
     gb = g - b
     br = b - r
@@ -96,7 +97,6 @@ module ColorUtil
     a = aldl * aldl + ah * (hcl1[1] * hcl1[1] + hcl2[2] * hcl1[2] - 2 * hcl1[1] * hcl1[2] * Math.cos( deg2rad( dh ) ))
     a = a.abs
     Math.sqrt(a)
-
   end
 
   def self.to_hsl(r,g,b)
@@ -158,13 +158,13 @@ module ColorUtil
     [y,v,u]
   end
 
-  def self.delta_e(one, other, method=:cie76)
+  def self.delta_e(one, other, method=:cie2k)
     # http://en.wikipedia.org/wiki/Color_difference
     # http://www.brucelindbloom.com/iPhone/ColorDiff.html
     l1, a1, b1 = one[0], one[1], one[2]
     l2, a2, b2 = other[0], other[1], other[2]
     c1, c2 = lab_chroma(one[1], one[2]), lab_chroma(other[1], other[2])
-    h1, h2 = lab_hue(one[1], one[2]), lab_hue(other[1], other[2])
+    h1 = lab_hue(one[1], one[2])#h2 = lab_hue(other[1], other[2])
     dl = l2 - l1
     da = a1 - a2
     db = b1 - b2
@@ -202,10 +202,116 @@ module ColorUtil
         (dc / (c * sc)) ** 2 +
         (dh / sh) ** 2
       )
+    when :cie2k
+      pow25_7 = 25**7
+      k_L = 1.0
+      k_C = 1.0
+      k_H = 1.0
+      c1 = Math.sqrt(a1**2 + b1**2)
+      c2 = Math.sqrt(a2**2 + b2**2)
+      c_avg = (c1 + c2) / 2
+      g = 0.5 * (1 - Math.sqrt(c_avg**7 / (c_avg**7 + pow25_7)))
+      l1_ = l1
+      a1_ = (1 + g) * a1
+      b1_ = b1
+      l2_ = l2
+      a2_ = (1 + g) * a2
+      b2_ = b2
+      c1_ = Math.sqrt(a1_**2 + b1_**2)
+      c2_ = Math.sqrt(a2_**2 + b2_**2)
+      if a1_ == 0 and b1_ == 0
+        h1_ = 0
+      else
+        if b1_ >= 0
+          pl = 0
+        else
+          pl = 360.0
+        end
+        h1_ = rad2deg(Math.atan2(b1_, a1_)) + pl
+      end
+      if a2_ == 0 and b2_ == 0
+        h2_ = 0
+      else
+        if b2_ >= 0
+          pl = 0
+        else
+          pl = 360.0
+        end
+        h2_ = rad2deg(Math.atan2(b2_, a2_)) + pl
+      end
+
+      if h2_ - h1_ > 180
+        dh_cond = 1.0
+      else
+        if h2_ - h1_ < -180
+          dh_cond = 2.0
+        else
+          dh_cond = 0
+        end
+      end
+
+      if dh_cond == 0
+        dh_ = h2_ - h1_
+      else
+        if dh_cond == 1
+          dh_ = h2_ - h1_ - 360.0
+        else
+          dh_ = h2_ + 360.0 - h1_
+        end
+      end
+
+      dl_ = l2_ - l1_
+      dl = dl_
+      dc_ = c2_ - c1_
+      dc = dc_
+      dh_ = 2 * Math.sqrt(c1_ * c2_) * Math.sin(deg2rad(dh_ / 2.0))
+      dh = dh_
+      l__avg = (l1_+ l2_) / 2
+      c__avg = (c1_+ c2_) / 2
+      if c1_ * c2_ == 0
+        h__avg_cond = 3.0
+      else
+        if (h2_ - h1_).abs <= 180
+          h__avg_cond = 0
+        else
+          if h2_ + h1_ < 360
+            h__avg_cond = 1.0
+          else
+            h__avg_cond = 2.0
+          end
+        end
+      end
+
+      if h__avg_cond == 3
+        h__avg = h1_ + h2_
+      else
+        if h__avg_cond == 0
+          h__avg = (h1_+ h2_) / 2
+        else
+          if h__avg_cond == 1
+            h__avg = (h1_+ h2_) / 2 + 180.0
+          else
+            h__avg = (h1_+ h2_) / 2 - 180.0
+          end
+        end
+      end
+      ab = (l__avg - 50.0)**2  # (L'_ave-50)^2
+      s_l = 1 + 0.015 * ab / Math.sqrt(20.0 + ab)
+      s_c = 1 + 0.045 * c__avg
+      t = (1 - 0.17 * Math.cos(deg2rad(h__avg - 30.0)) + 0.24 * Math.cos(deg2rad(2.0 * h__avg)) + 0.32 * Math.cos(deg2rad(3.0 * h__avg + 6.0)) - 0.2 * Math.cos(deg2rad(4 * h__avg - 63.0)))
+      s_h = 1 + 0.015 * c__avg * t
+      dtheta = 30.0 * Math.exp(-1 * ((h__avg - 275.0) / 25.0)**2)
+      r_c = 2.0 * Math.sqrt(c__avg**7 / (c__avg**7 + pow25_7))
+      r_t = -Math.sin(deg2rad(2.0 * dtheta)) * r_c
+      aj = dl_ / s_l / k_L  # dL' / k_L / S_L
+      ak = dc_ / s_c / k_C  # dC' / k_C / S_C
+      al = dh_ / s_h / k_H  # dH' / k_H / S_H
+      Math.sqrt(aj**2 + ak**2 + al**2 + r_t * ak * al)
     else
       raise "Unknown deltaE method: #{method.inspect}"
     end
   end
+
 
   X_D65 = 0.9504
   Y_D65 = 1.0
@@ -249,14 +355,15 @@ module ColorUtil
     [l.round, a.round, b.round]
   end
   private
-        def self.normalize(v)
-          v /= 255.0
-          if v <= 0.04045
-            v / 12
-          else
-            ( (v + 0.055) / 1.055) ** 2.4
-          end
-        end
+
+  def self.normalize(v)
+    v /= 255.0
+    if v <= 0.04045
+      v / 12
+    else
+      ( (v + 0.055) / 1.055) ** 2.4
+    end
+  end
 
 
   def self.rad2deg(r)
