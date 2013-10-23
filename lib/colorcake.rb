@@ -53,7 +53,7 @@ module Colorcake
       @max_numbers_of_color_in_palette ||= 5
       @white_threshold ||= 55_000
       @black_threshold ||= 2000
-      @fcmp_distance_value ||= 9000
+      @fcmp_distance_value ||= 4000
     end
   end
 
@@ -219,7 +219,7 @@ module Colorcake
       rgb_color_2 = ColorUtil.rgb_from_string(col_array[col][0])
       pixel_1 = ColorUtil.rgb_to_lab([rgb_color_1[0], rgb_color_1[1], rgb_color_1[2]])
       pixel_2 = ColorUtil.rgb_to_lab([rgb_color_2[0], rgb_color_2[1], rgb_color_2[2]])
-      diff = ColorUtil.delta_e(pixel_1, pixel_2, :ciede2000)
+      diff = ColorUtil.delta_e(pixel_1, pixel_2)
       # c1 = ColorUtil.rgb_to_hcl(rgb_color_1[0],rgb_color_1[1],rgb_color_1[2])
       # c2 = ColorUtil.rgb_to_hcl(rgb_color_2[0],rgb_color_2[1],rgb_color_2[2])
       # diff = ColorUtil.distance_hcl(c1, c2)
