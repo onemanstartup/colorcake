@@ -33,7 +33,7 @@ module Colorable
       if image_path_for_color_generator && File.exists?(image_path_for_color_generator)
         if untouched_palette?
           colors.destroy_all
-          @finded_colors = Color.extract_colors(image_path_for_color_generator)
+          @finded_colors = Colorcake.extract_colors(image_path_for_color_generator)
           @finded_colors[0].each do |color|
             colors.create(search_color_id: color[1][:search_color_id], search_factor: color[1][:search_factor], distance: color[1][:distance])
           end
@@ -89,7 +89,7 @@ module Colorable
     # colors is for example {"#333300" => [1,2]}
     def generate_palette(colors)
       begin
-        self.palette = Color.create_palette(colors).keys.join(',')
+        self.palette = Colorcake.create_palette(colors).keys.join(',')
         self.modified_palette = nil
         save
       rescue => e
