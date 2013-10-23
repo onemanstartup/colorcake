@@ -11,7 +11,7 @@ module Colorcake
     attr_accessor :base_colors, :colors_count,
       :max_numbers_of_color_in_palette,
       :white_threshold, :black_threshold,
-      :fcmp_distance_value
+      :fcmp_distance_value, :cluster_colors
 
     def configure(&blk)
       class_eval(&blk)
@@ -49,11 +49,11 @@ module Colorcake
         'cae0e7' => 'ffffff',
         'cad3d5' => 'ffffff'
       }
-      @colors_count ||= 64
+      @colors_count ||= 60
       @max_numbers_of_color_in_palette ||= 5
       @white_threshold ||= 55_000
-      @black_threshold ||= 1500
-      @fcmp_distance_value ||= 5_500
+      @black_threshold ||= 2000
+      @fcmp_distance_value ||= 9000
     end
   end
 
@@ -96,7 +96,7 @@ module Colorcake
     # Disable when not working with DB
     # [colors, colors_hex]
     colors.delete_if {|k,v| colors[k][:search_factor] < 1}
-    [colors, colors_hex.keys]
+    [colors, colors_hex]
   end
 
   def self.create_palette(colors)
@@ -104,10 +104,11 @@ module Colorcake
       colors = slim_palette(colors)
       create_palette(colors)
     elsif colors.length == @max_numbers_of_color_in_palette
+      puts colors
       return colors
     else
-      colors = Color.expand_palette(colors)
-      Color.create_palette(colors)
+      colors = expand_palette(colors)
+      create_palette(colors)
     end
   end
 
@@ -154,8 +155,6 @@ module Colorcake
 
   def self.compute_palette(src_of_image)
     image = ::Magick::ImageList.new(src_of_image)
-    image = image.white_threshold(@white_threshold)
-    image = image.black_threshold(@black_threshold)
     image = image.quantize(@colors_count, Magick::YIQColorspace)
     palette = image.color_histogram # .sort {|a, b| b[1] <=> a[1]}
     image.destroy!
@@ -218,9 +217,9 @@ module Colorcake
     matrix = Matrix.build(col_array.length, col_array.length) do |row, col|
       rgb_color_1 = ColorUtil.rgb_from_string(col_array[row][0])
       rgb_color_2 = ColorUtil.rgb_from_string(col_array[col][0])
-      pixel_1 = [rgb_color_1[0], rgb_color_1[1], rgb_color_1[2]]
-      pixel_2 = [rgb_color_2[0], rgb_color_2[1], rgb_color_2[2]]
-      diff = ColorUtil.euclid_distance_rgb(pixel_1, pixel_2)
+      pixel_1 = ColorUtil.rgb_to_lab([rgb_color_1[0], rgb_color_1[1], rgb_color_1[2]])
+      pixel_2 = ColorUtil.rgb_to_lab([rgb_color_2[0], rgb_color_2[1], rgb_color_2[2]])
+      diff = ColorUtil.delta_e(pixel_1, pixel_2, :ciede2000)
       # c1 = ColorUtil.rgb_to_hcl(rgb_color_1[0],rgb_color_1[1],rgb_color_1[2])
       # c2 = ColorUtil.rgb_to_hcl(rgb_color_2[0],rgb_color_2[1],rgb_color_2[2])
       # diff = ColorUtil.distance_hcl(c1, c2)
@@ -232,7 +231,8 @@ module Colorcake
     end
     colors_position = find_position_in_matrix_of_closest_color(matrix)
     closest_colors = [colors.to_a[colors_position[0]], colors.to_a[colors_position[1]]]
-    merge_result = MergeColorsMethods.hcl_cl_merge(closest_colors)
+    puts closest_colors
+    merge_result = MergeColorsMethods.percentage_merge(closest_colors)
     colors.merge!(merge_result[0])
     colors.delete(merge_result[1])
     colors

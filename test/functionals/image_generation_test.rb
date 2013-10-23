@@ -38,16 +38,13 @@ def run
     some += colorspace_test
     some += "<h1 style='clear:both'>Palette Colors(original 5 most contrast and colorful colors)</h1>"
 
-    # colors = Colorcake.create_palette(@finded_colors[1])
+    colors = Colorcake.create_palette(@finded_colors[1])
     # # ap colors
-    # new_colors_test = ''
-    # colors.sort_by{|x| x[1][1]}.reverse_each do |color, percentage|
-    #   # if color == '#000000' && percentage[1].round(2) <= 5
-    #   # elsif percentage[1].round(2) >= 0.5
-    #     # new_colors_test += "<div style='background: #{color}'  >  #{percentage[1].round(2)} </div>"
-    #   # end
-    # end
-    # some += new_colors_test
+    new_colors_test = ''
+     colors.sort_by{|x| x[1][1]}.reverse_each do |color, percentage|
+       new_colors_test += "<div style='background: #{color};color:#fff;'  >  #{percentage[1].round(2)} </div>"
+     end
+    some += new_colors_test
     some = "<html><head><style>h1{font-size:16px}#colors{float:left; width: 50%}*{box-sizing:border-box}div{float:left;width:70px;height:70px;line-height:70px; text-align:center; font-weight:bold; font-family: Helvetica, Arial}</style></head><body>" + some + "</div><div id='image'><img style='display:block; clear:both' src='#{index}.jpg'/></div></body></html>"
     #puts some
     puts 'OK'
