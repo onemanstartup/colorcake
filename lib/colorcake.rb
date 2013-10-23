@@ -3,54 +3,52 @@ require_relative 'colorcake/color_util'
 require_relative 'colorcake/merge_colors_methods'
 require 'matrix'
 require 'rmagick'
-require 'awesome_print'
 # Main class of functionality
 module Colorcake
   require 'colorcake/engine' if defined?(Rails)
 
   class << self
     attr_accessor :base_colors, :colors_count,
-                  :max_numbers_of_color_in_palette,
-                  :white_threshold, :black_threshold,
-                  :fcmp_distance_value
+      :max_numbers_of_color_in_palette,
+      :white_threshold, :black_threshold,
+      :fcmp_distance_value
 
     def configure(&blk)
       class_eval(&blk)
       @base_colors ||= %w(660000 cc0000 ea4c88 993399 663399 304961 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 fff533 ff6600 c8ad7f 996633 663300 000000 999999 cccccc ffffff)
       @cluster_colors ||= {
-                            '660000' => '660000',
-                            'cc0000' => 'cc0000', 'ce454c' => 'cc0000',
-                            'ea4c88' => 'ea4c88',
-                            '993399' => '993399',
-                            '663399' => '663399',
-                            '304961' => '304961', '405672' => '304961',
-                            '0066cc' => '0066cc', '1a3672' => '0066cc', '333399' => '0066cc', '0099cc' => '0066cc',
-                            '66cccc' => '66cccc',
-                            '77cc33' => '77cc33',
-                            '336600' => '336600',
-                            'cccc33' => 'cccc33', '999900' => 'cccc33',
-                            'ffcc33' => 'ffcc33',
-                            'fff533' => 'fff533', 'efd848' => 'fff533',
-                            'ff6600' => 'ff6600',
-                            'c8ad7f' => 'c8ad7f', 'ccad37' => 'c8ad7f', 'e0d3ba' => 'c8ad7f',
-                            '996633' => '996633',
-                            '663300' => '663300',
-                            '000000' => '000000', '2e2929' => '000000',
-                            '999999' => '999999', '7e8896' => '999999',
-                            'cccccc' => 'cccccc', 'afb5ab' => 'cccccc',
-                            'ffffff' => 'ffffff', 'dde2e2' => 'ffffff', 'edefeb' => 'ffffff', 'ffe6e6' => '',  'ffe6e6' => 'ffffff', 'd5ccc3' => 'ffffff',
-'f6fce3' => 'ffffff',
-'e1f4fa' => 'ffffff',
-'e5e1fa' => 'ffffff',
-'fbe2f1' => 'ffffff',
-'fffae6' => 'ffffff',
-'ede7cf' => 'ffffff',
-'cae0e7' => 'ffffff',
-'ede1cf' => 'ffffff',
-'cae0e7' => 'ffffff',
-'cad3d5' => 'ffffff'
-
-                          }
+        '660000' => '660000',
+        'cc0000' => 'cc0000', 'ce454c' => 'cc0000',
+        'ea4c88' => 'ea4c88',
+        '993399' => '993399',
+        '663399' => '663399',
+        '304961' => '304961', '405672' => '304961',
+        '0066cc' => '0066cc', '1a3672' => '0066cc', '333399' => '0066cc', '0099cc' => '0066cc',
+        '66cccc' => '66cccc',
+        '77cc33' => '77cc33',
+        '336600' => '336600',
+        'cccc33' => 'cccc33', '999900' => 'cccc33',
+        'ffcc33' => 'ffcc33',
+        'fff533' => 'fff533', 'efd848' => 'fff533',
+        'ff6600' => 'ff6600',
+        'c8ad7f' => 'c8ad7f', 'ccad37' => 'c8ad7f', 'e0d3ba' => 'c8ad7f',
+        '996633' => '996633',
+        '663300' => '663300',
+        '000000' => '000000', '2e2929' => '000000',
+        '999999' => '999999', '7e8896' => '999999',
+        'cccccc' => 'cccccc', 'afb5ab' => 'cccccc',
+        'ffffff' => 'ffffff', 'dde2e2' => 'ffffff', 'edefeb' => 'ffffff', 'ffe6e6' => '',  'ffe6e6' => 'ffffff', 'd5ccc3' => 'ffffff',
+        'f6fce3' => 'ffffff',
+        'e1f4fa' => 'ffffff',
+        'e5e1fa' => 'ffffff',
+        'fbe2f1' => 'ffffff',
+        'fffae6' => 'ffffff',
+        'ede7cf' => 'ffffff',
+        'cae0e7' => 'ffffff',
+        'ede1cf' => 'ffffff',
+        'cae0e7' => 'ffffff',
+        'cad3d5' => 'ffffff'
+      }
       @colors_count ||= 64
       @max_numbers_of_color_in_palette ||= 5
       @white_threshold ||= 55_000
@@ -82,10 +80,6 @@ module Colorcake
       # Disable when not working with Database
       # id = SearchColor.where(color:distance[0]).first.id
       id = @base_colors.index(closest_color[0])
-      unless id
-        ap 'отсутсвует id'
-        ap closest_color[0]
-      end
       colors[id] ||= {}
       colors[id][:search_color_id] ||= id
       colors[id][:search_factor] ||= []
@@ -144,8 +138,8 @@ module Colorcake
     closest_color = closest_colors.sort_by { |a, d| d }.first
     if @cluster_colors[closest_color[0]]
       closest_color = [@cluster_colors[closest_color[0]],
-                        ColorUtil.delta_e(ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(@cluster_colors[closest_color[0]])),
-                                          ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(closest_color[0]))) ]
+                       ColorUtil.delta_e(ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(@cluster_colors[closest_color[0]])),
+                                         ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(closest_color[0]))) ]
     end
     closest_color
   end
