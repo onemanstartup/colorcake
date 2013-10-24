@@ -1,41 +1,59 @@
-require 'colorcake/version'
-require 'colorcake/color_util'
-require 'colorcake/merge_colors_methods'
+require_relative 'colorcake/version'
+require_relative 'colorcake/color_util'
+require_relative 'colorcake/merge_colors_methods'
 require 'matrix'
 require 'rmagick'
-require 'awesome_print'
 # Main class of functionality
 module Colorcake
   require 'colorcake/engine' if defined?(Rails)
 
   class << self
     attr_accessor :base_colors, :colors_count,
-                  :max_numbers_of_color_in_palette,
-                  :white_threshold, :black_threshold,
-                  :fcmp_distance_value
+      :max_numbers_of_color_in_palette,
+      :white_threshold, :black_threshold,
+      :delta, :cluster_colors
 
     def configure(&blk)
       class_eval(&blk)
-      # ffffff - is more like cccccc
-      @base_colors ||= %w(660000 cc0000 ea4c88 993399 663399 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 ff6600 c8ad7f 996633 663300 000000 999999 cccccc ffffff)
-      @extended_colors ||= %w(660000 990000 cc0000 cc3333 ea4c88 993399 663399 333399 0066cc 0099cc 66cccc 77cc33 669900 336600 666600 999900 cccc33 ffff00 ffcc33 ff9900 ff6600 cc6633 c8ad7f 996633 663300 000000 999999 cccccc ffffff )
-      @cluster_colors ||= { '990000' => '660000',
-                            'cc3333' => 'cc0000',
-                            '333399' => '663399',
-                            '0099cc' => '0066cc',
-                            '669900' => '77cc33',
-                            '666600' => '336600',
-                            '999900' => '336600',
-                            'ffff00' => 'cccc33',
-                            'ff9900' => 'ffcc33',
-                            'cc6633' => 'ff6600',
-                            'E8E8E8' => 'ffffff'
-                          }
-      @colors_count ||= 128
+      @base_colors ||= %w(660000 cc0000 ea4c88 993399 663399 304961 0066cc 66cccc 77cc33 336600 cccc33 ffcc33 fff533 ff6600 c8ad7f 996633 663300 000000 999999 cccccc ffffff)
+      @cluster_colors ||= {
+        '660000' => '660000',
+        'cc0000' => 'cc0000', 'ce454c' => 'cc0000',
+        'ea4c88' => 'ea4c88',
+        '993399' => '993399',
+        '663399' => '663399',
+        '304961' => '304961', '405672' => '304961',
+        '0066cc' => '0066cc', '1a3672' => '0066cc', '333399' => '0066cc', '0099cc' => '0066cc',
+        '66cccc' => '66cccc',
+        '77cc33' => '77cc33',
+        '336600' => '336600',
+        'cccc33' => 'cccc33', '999900' => 'cccc33',
+        'ffcc33' => 'ffcc33',
+        'fff533' => 'fff533', 'efd848' => 'fff533',
+        'ff6600' => 'ff6600',
+        'c8ad7f' => 'c8ad7f', 'ccad37' => 'c8ad7f', 'e0d3ba' => 'c8ad7f',
+        '996633' => '996633',
+        '663300' => '663300',
+        '000000' => '000000', '2e2929' => '000000',
+        '999999' => '999999', '7e8896' => '999999',
+        'cccccc' => 'cccccc', 'afb5ab' => 'cccccc',
+        'ffffff' => 'ffffff', 'dde2e2' => 'ffffff', 'edefeb' => 'ffffff', 'ffe6e6' => '',  'ffe6e6' => 'ffffff', 'd5ccc3' => 'ffffff',
+        'f6fce3' => 'ffffff',
+        'e1f4fa' => 'ffffff',
+        'e5e1fa' => 'ffffff',
+        'fbe2f1' => 'ffffff',
+        'fffae6' => 'ffffff',
+        'ede7cf' => 'ffffff',
+        'cae0e7' => 'ffffff',
+        'ede1cf' => 'ffffff',
+        'cae0e7' => 'ffffff',
+        'cad3d5' => 'ffffff'
+      }
+      @colors_count ||= 60
       @max_numbers_of_color_in_palette ||= 5
       @white_threshold ||= 55_000
-      @black_threshold ||= 10500
-      @fcmp_distance_value ||= 5_500
+      @black_threshold ||= 2000
+      @delta ||= 2.5
     end
   end
 
@@ -52,7 +70,6 @@ module Colorcake
     @old_palette = palette
     @new_palette = []
     remove_common_color_from_palette(palette)
-
     (0..@new_palette.length - 1).each do |i|
       c = @new_palette[i][0].to_s.split(',').map { |x| x[/\d+/] }
       b = compute_b(c)
@@ -69,11 +86,6 @@ module Colorcake
       colors[id][:search_factor] << percentage
       colors[id][:distance] ||= []
       colors[id][:hex] ||= c.join('')
-      if id  && @base_colors[id] == '663399'
-        puts colors[id][:hex]
-        puts closest_color
-        puts closest_color_to(b)
-      end
       colors[id][:hex_of_base] ||= @base_colors[id] if id
       colors[id][:distance] = closest_color[1] if colors[id][:distance] == []
     end
@@ -83,7 +95,8 @@ module Colorcake
     end
     # Disable when not working with DB
     # [colors, colors_hex]
-    [colors, colors_hex.keys]
+    colors.delete_if {|k,v| colors[k][:search_factor] < 1}
+    [colors, colors_hex]
   end
 
   def self.create_palette(colors)
@@ -93,8 +106,8 @@ module Colorcake
     elsif colors.length == @max_numbers_of_color_in_palette
       return colors
     else
-      colors = Color.expand_palette(colors)
-      Color.create_palette(colors)
+      colors = expand_palette(colors)
+      create_palette(colors)
     end
   end
 
@@ -117,28 +130,16 @@ module Colorcake
 
   def self.closest_color_to(b)
     closest_colors = {}
-    @extended_colors.each do |extended_color|
+    @cluster_colors.each do |extended_color, base_color|
       extended_color_hex = ColorUtil.rgb_number_from_string(extended_color)
       delta = ColorUtil.delta_e(ColorUtil.rgb_to_lab(extended_color_hex), ColorUtil.rgb_to_lab(b))
-      ap ColorUtil.rgb_to_lab(b)
-      ap ColorUtil.rgb_to_lab(extended_color_hex)
-      ap delta
       closest_colors[extended_color] = delta
     end
-    ap closest_colors
     closest_color = closest_colors.sort_by { |a, d| d }.first
-    if closest_color[0] == '663399'
-      ap closest_colors.sort_by { |a, d| d }
-    end
-    # bad name for variable
-    # if @cluster_colors[closest_color[0]]
-    #   closest_color = [@cluster_colors[closest_color[0]],
-    #                     ColorUtil.distance_rgb_strings(@cluster_colors[closest_color[0]], closest_color[0]) ]
-    # end
     if @cluster_colors[closest_color[0]]
       closest_color = [@cluster_colors[closest_color[0]],
-                        ColorUtil.delta_e(ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(@cluster_colors[closest_color[0]])),
-                                               ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(closest_color[0]))) ]
+                       ColorUtil.delta_e(ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(@cluster_colors[closest_color[0]])),
+                                         ColorUtil.rgb_to_lab(ColorUtil.rgb_number_from_string(closest_color[0]))) ]
     end
     closest_color
   end
@@ -153,9 +154,7 @@ module Colorcake
 
   def self.compute_palette(src_of_image)
     image = ::Magick::ImageList.new(src_of_image)
-    image = image.white_threshold(@white_threshold)
-    image = image.black_threshold(@black_threshold)
-    image = image.quantize(@colors_count, Magick::RGBColorspace)
+    image = image.quantize(@colors_count, Magick::YIQColorspace)
     palette = image.color_histogram # .sort {|a, b| b[1] <=> a[1]}
     image.destroy!
     palette
@@ -168,13 +167,21 @@ module Colorcake
   end
 
   # Use Magick::HSLColorspace or Magick::SRGBColorspace
-  def self.remove_common_color_from_palette(palette, colorspace = Magick::RGBColorspace)
+  def self.remove_common_color_from_palette(palette, colorspace = Magick::YIQColorspace)
     common_colors = []
     palette.each_with_index do |s, index|
       common_colors[index] = []
-      if index < palette.length - 1
+      if index < palette.length
         palette.each do |color|
-          if s[0].fcmp(color[0], @fcmp_distance_value, colorspace)
+          sr = s[0].red / 257 if s[0].red / 255 > 0
+          sb = s[0].blue / 257 if s[0].blue / 255 > 0
+          sg = s[0].green / 257 if s[0].green / 255 > 0
+          cr = color[0].red / 257 if color[0].red / 255 > 0
+          cb = color[0].blue / 257 if color[0].blue / 255 > 0
+          cg = color[0].green / 257 if color[0].green / 255 > 0
+          delta =  ColorUtil.delta_e(ColorUtil.rgb_to_lab([sr, sb, sg]),
+                                          ColorUtil.rgb_to_lab([cr, cb, cg]))
+          if delta < @delta
             common_colors[index] << color
             common_colors[index] << s
             common_colors[index].uniq!
@@ -217,9 +224,9 @@ module Colorcake
     matrix = Matrix.build(col_array.length, col_array.length) do |row, col|
       rgb_color_1 = ColorUtil.rgb_from_string(col_array[row][0])
       rgb_color_2 = ColorUtil.rgb_from_string(col_array[col][0])
-      pixel_1 = [rgb_color_1[0], rgb_color_1[1], rgb_color_1[2]]
-      pixel_2 = [rgb_color_2[0], rgb_color_2[1], rgb_color_2[2]]
-      diff = ColorUtil.euclid_distance_rgb(pixel_1, pixel_2)
+      pixel_1 = ColorUtil.rgb_to_lab([rgb_color_1[0], rgb_color_1[1], rgb_color_1[2]])
+      pixel_2 = ColorUtil.rgb_to_lab([rgb_color_2[0], rgb_color_2[1], rgb_color_2[2]])
+      diff = ColorUtil.delta_e(pixel_1, pixel_2)
       # c1 = ColorUtil.rgb_to_hcl(rgb_color_1[0],rgb_color_1[1],rgb_color_1[2])
       # c2 = ColorUtil.rgb_to_hcl(rgb_color_2[0],rgb_color_2[1],rgb_color_2[2])
       # diff = ColorUtil.distance_hcl(c1, c2)
@@ -231,7 +238,7 @@ module Colorcake
     end
     colors_position = find_position_in_matrix_of_closest_color(matrix)
     closest_colors = [colors.to_a[colors_position[0]], colors.to_a[colors_position[1]]]
-    merge_result = MergeColorsMethods.hcl_cl_merge(closest_colors)
+    merge_result = MergeColorsMethods.lab_merge(closest_colors)
     colors.merge!(merge_result[0])
     colors.delete(merge_result[1])
     colors
