@@ -37,7 +37,6 @@ module Colorable
           @finded_colors[0].each do |color|
             colors.create(search_color_id: color[1][:search_color_id], search_factor: color[1][:search_factor], distance: color[1][:distance])
           end
-          binding.pry
           generate_palette(@finded_colors[1])
         else
           generate_palette_from_active
