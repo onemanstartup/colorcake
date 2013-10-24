@@ -43,10 +43,10 @@ module MergeColorsMethods
     # colors[0][1] << ColorUtil.delta_e(c1, c2, :cie76)
  # c1[1] #+ c1[1]
     color = colors.max_by do |el|
-      el[1][0]
+      el[1][1]
     end
     min_color = colors.min_by do |el|
-      el[1][1]
+      el[1][0]
     end
     color[1][0] = colors.inject {|sum, n| sum[1][0] + n[1][0]}
     [{color[0] => color[1]}, min_color[0]]

@@ -3,7 +3,7 @@ require 'method_profiler'
 
 Colorcake.configure {}
 def run
-  files = Array(0..13)
+  files = Array(0..15)
   files.each_with_index do |file, index|
     puts "image - #{index}"
     @new_palette = []

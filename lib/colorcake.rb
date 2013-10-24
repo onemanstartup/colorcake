@@ -11,7 +11,7 @@ module Colorcake
     attr_accessor :base_colors, :colors_count,
       :max_numbers_of_color_in_palette,
       :white_threshold, :black_threshold,
-      :fcmp_distance_value, :cluster_colors
+      :delta, :cluster_colors
 
     def configure(&blk)
       class_eval(&blk)
@@ -53,7 +53,7 @@ module Colorcake
       @max_numbers_of_color_in_palette ||= 5
       @white_threshold ||= 55_000
       @black_threshold ||= 2000
-      @fcmp_distance_value ||= 4000
+      @delta ||= 2.5
     end
   end
 
@@ -104,7 +104,6 @@ module Colorcake
       colors = slim_palette(colors)
       create_palette(colors)
     elsif colors.length == @max_numbers_of_color_in_palette
-      puts colors
       return colors
     else
       colors = expand_palette(colors)
@@ -168,7 +167,7 @@ module Colorcake
   end
 
   # Use Magick::HSLColorspace or Magick::SRGBColorspace
-  def self.remove_common_color_from_palette(palette, colorspace = Magick::HCLColorspace)
+  def self.remove_common_color_from_palette(palette, colorspace = Magick::YIQColorspace)
     common_colors = []
     palette.each_with_index do |s, index|
       common_colors[index] = []
@@ -182,7 +181,7 @@ module Colorcake
           cg = color[0].green / 257 if color[0].green / 255 > 0
           delta =  ColorUtil.delta_e(ColorUtil.rgb_to_lab([sr, sb, sg]),
                                           ColorUtil.rgb_to_lab([cr, cb, cg]))
-          if delta < 5
+          if delta < @delta
             common_colors[index] << color
             common_colors[index] << s
             common_colors[index].uniq!
@@ -239,8 +238,7 @@ module Colorcake
     end
     colors_position = find_position_in_matrix_of_closest_color(matrix)
     closest_colors = [colors.to_a[colors_position[0]], colors.to_a[colors_position[1]]]
-    puts closest_colors
-    merge_result = MergeColorsMethods.percentage_merge(closest_colors)
+    merge_result = MergeColorsMethods.lab_merge(closest_colors)
     colors.merge!(merge_result[0])
     colors.delete(merge_result[1])
     colors
