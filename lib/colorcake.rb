@@ -168,13 +168,21 @@ module Colorcake
   end
 
   # Use Magick::HSLColorspace or Magick::SRGBColorspace
-  def self.remove_common_color_from_palette(palette, colorspace = Magick::YIQColorspace)
+  def self.remove_common_color_from_palette(palette, colorspace = Magick::HCLColorspace)
     common_colors = []
     palette.each_with_index do |s, index|
       common_colors[index] = []
       if index < palette.length
         palette.each do |color|
-          if s[0].fcmp(color[0], @fcmp_distance_value, colorspace)
+          sr = s[0].red / 257 if s[0].red / 255 > 0
+          sb = s[0].blue / 257 if s[0].blue / 255 > 0
+          sg = s[0].green / 257 if s[0].green / 255 > 0
+          cr = color[0].red / 257 if color[0].red / 255 > 0
+          cb = color[0].blue / 257 if color[0].blue / 255 > 0
+          cg = color[0].green / 257 if color[0].green / 255 > 0
+          delta =  ColorUtil.delta_e(ColorUtil.rgb_to_lab([sr, sb, sg]),
+                                          ColorUtil.rgb_to_lab([cr, cb, cg]))
+          if delta < 5
             common_colors[index] << color
             common_colors[index] << s
             common_colors[index].uniq!
