@@ -78,8 +78,10 @@ module Colorcake
       colors_hex['#' + c.join('')] = @new_palette[i][1]
 
       # Disable when not working with Database
-      # id = SearchColor.where(color:distance[0]).first.id
-      id = @base_colors.index(closest_color[0])
+      id = SearchColor.find_or_create_by_color(closest_color[0]).id
+      # Enable when not working with Database
+      # id = @base_colors.index(closest_color[0])
+
       colors[id] ||= {}
       colors[id][:search_color_id] ||= id
       colors[id][:search_factor] ||= []
