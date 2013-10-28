@@ -175,6 +175,12 @@ module Colorcake
       common_colors[index] = []
       if index < palette.length
         palette.each do |color|
+          sr = s[0].red
+          sb = s[0].blue
+          sg = s[0].green
+          cr = color[0].red
+          cb = color[0].blue
+          cg = color[0].green
           sr = s[0].red / 257 if s[0].red / 255 > 0
           sb = s[0].blue / 257 if s[0].blue / 255 > 0
           sg = s[0].green / 257 if s[0].green / 255 > 0
