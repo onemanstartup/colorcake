@@ -60,7 +60,7 @@ module Colorable
       begin
         if image_path_for_color_generator && File.exists?(image_path_for_color_generator)
           # find original colors because we don't store them
-          @finded_colors = Color.extract_colors(image_path_for_color_generator)
+          @finded_colors = Colorcake.extract_colors(image_path_for_color_generator)
         end
         # store here original colors in right format
         coll = []
