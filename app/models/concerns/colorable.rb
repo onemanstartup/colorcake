@@ -20,7 +20,7 @@ module Colorable
         col_in = col.join(',')
         joins("inner join(select colorable_id, sum(distance) as dist, sum(search_factor) as search_factor
               from colors
-              where search_color_id IN (#{col_in}) AND search_factor > 2 AND colorable_type = #{self.base_class.name}
+              where search_color_id IN (#{col_in}) AND search_factor > 2 AND colorable_type = '#{self.base_class.name}'
               group by colorable_id having COUNT(colorable_id) = #{col.length})
               as matched on #{self.name.tableize}.id = matched.colorable_id").order('search_factor').reorder("search_factor DESC, dist DESC, #{self.name.tableize}.id DESC")
       end
