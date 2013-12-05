@@ -8,8 +8,7 @@ module Colorable
     has_many :colors, as: :colorable
     has_many :search_colors, through: :colors
 
-    # if you want modify colors from model form
-    attr_accessible :colors_attributes, :modified_palette
+    attr_accessor :modified_palette
     accepts_nested_attributes_for :colors, update_only: true
 
     after_create :process_colors
