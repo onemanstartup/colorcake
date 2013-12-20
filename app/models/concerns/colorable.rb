@@ -88,9 +88,9 @@ module Colorable
     # colors is for example {"#333300" => [1,2]}
     def generate_palette(colors)
       begin
-        self.palette = Colorcake.create_palette(colors).keys.join(',')
-        self.modified_palette = nil
-        save
+        _palette = Colorcake.create_palette(colors).keys.join(',')
+        _modified_palette = nil
+        assign_attributes palette: _palette, modified_palette: _modified_palette
       rescue => e
           puts "ERROR!!! #{e.message}"
       end
