@@ -174,43 +174,27 @@ module Colorcake
   def self.remove_common_color_from_palette(palette, delta, colorspace = Magick::YIQColorspace)
     common_colors = []
     new_palette = []
-    old_palette = palette
     palette.each_with_index do |s, index|
       common_colors[index] = []
-      if index < palette.length
-        palette.each do |color|
-          sr = normalize_color s[0].red
-          sb = normalize_color s[0].blue
-          sg = normalize_color s[0].green
-          cr = normalize_color color[0].red
-          cb = normalize_color color[0].blue
-          cg = normalize_color color[0].green
-          new_delta =  ColorUtil.delta_e(ColorUtil.rgb_to_lab([sr, sb, sg]),
-                                         ColorUtil.rgb_to_lab([cr, cb, cg]))
-          if new_delta < delta
-            common_colors[index] << color
-            common_colors[index] << s
-            common_colors[index].uniq!
-
-            common_color = common_colors[index].first[1][1]
-            return unless common_color
-            search_color = color[1][1]
-            if common_color != search_color
-              common_colors[index].first[1][1] += search_color
-            end
-
-          end
-        end
-        common_colors[index].uniq!
-        new_palette << common_colors[index].first
-        common_colors[index].each_with_index do |col, ind|
-          if ind != 0
-            old_palette.tap { |hs| hs.delete(col[0]) }
-          end
+      palette.each do |color|
+        if calculate_new_delta(s, color, delta) < delta
+          common_colors[index] << color
         end
       end
+      new_palette << common_colors[index].first
     end
     new_palette
+  end
+
+  def self.calculate_new_delta(s, color, delta)
+    sr = normalize_color s[0].red
+    sb = normalize_color s[0].blue
+    sg = normalize_color s[0].green
+    cr = normalize_color color[0].red
+    cb = normalize_color color[0].blue
+    cg = normalize_color color[0].green
+    new_delta =  ColorUtil.delta_e(ColorUtil.rgb_to_lab([sr, sb, sg]),
+                                   ColorUtil.rgb_to_lab([cr, cb, cg]))
   end
 
   def self.normalize_color(color)
