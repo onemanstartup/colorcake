@@ -50,7 +50,7 @@ module Colorcake
         'cad3d5' => 'ffffff'
       }
       @colors_count ||= 60
-      @max_numbers_of_color_in_palette ||= 5
+      @max_numbers_of_color_in_palette ||= 19
       @white_threshold ||= 55_000
       @black_threshold ||= 2000
       @delta ||= 2.5
@@ -103,6 +103,7 @@ module Colorcake
   end
 
   def self.create_palette(colors)
+    puts colors.length
     if colors.length > @max_numbers_of_color_in_palette
       colors = slim_palette(colors)
       create_palette(colors)
@@ -169,7 +170,6 @@ module Colorcake
     array_of_vars.reduce(:+).to_i
   end
 
-  # flog 105.6
   # Use Magick::HSLColorspace or Magick::SRGBColorspace
   def self.remove_common_color_from_palette(palette, delta, colorspace = Magick::YIQColorspace)
     common_colors = []
@@ -202,6 +202,7 @@ module Colorcake
     color
   end
 
+  # flog 57
   def self.expand_palette(colors)
     col_array = colors.to_a
     rgb_color_1 = ColorUtil.rgb_from_string(col_array[0][0])
