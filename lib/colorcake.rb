@@ -50,7 +50,7 @@ module Colorcake
         'cad3d5' => 'ffffff'
       }
       @colors_count ||= 60
-      @max_numbers_of_color_in_palette ||= 19
+      @max_numbers_of_color_in_palette ||= 5
       @white_threshold ||= 55_000
       @black_threshold ||= 2000
       @delta ||= 2.5
@@ -69,8 +69,7 @@ module Colorcake
     @new_palette = remove_common_color_from_palette(palette, @delta)
     (0..@new_palette.length - 1).each do |i|
       c = @new_palette[i][0].to_s.split(',').map { |x| x[/\d+/] }
-      b = compute_b(c)
-      closest_color = closest_color_to(b)
+      closest_color = closest_color_to(compute_b(c))
       percentage = @new_palette[i][1][1]
       colors_hex['#' + c.join('')] = @new_palette[i][1]
 
@@ -103,12 +102,10 @@ module Colorcake
   end
 
   def self.create_palette(colors)
-    puts colors.length
+    return colors if colors.length == @max_numbers_of_color_in_palette
     if colors.length > @max_numbers_of_color_in_palette
       colors = slim_palette(colors)
       create_palette(colors)
-    elsif colors.length == @max_numbers_of_color_in_palette
-      return colors
     else
       colors = expand_palette(colors)
       create_palette(colors)
@@ -119,17 +116,10 @@ module Colorcake
 
   def self.compute_b(c)
     c.pop
-    c[0], c[1], c[2] = [c[0], c[1], c[2]].map do |s|
+    [c[0], c[1], c[2]].map do |s|
       s = s.to_i
       s = s / 257 if s / 255 > 0 # not all ImageMagicks are created equal....
-      s = s.to_s(16)
-      if s.size == 1
-        '0' + s
-      else
-        s
-      end
     end
-    c.join('').scan(/../).map { |color| color.to_i(16) }
   end
 
   def self.closest_color_to(b)
@@ -198,22 +188,22 @@ module Colorcake
   end
 
   def self.normalize_color(color)
-    color = color / 257 if color / 255 > 0
-    color
+    ColorUtil.normalize(color)
   end
 
-  # flog 57
+  # flog 29.5
+  # Rare: If generated palette have very small colors, expand that to look more nicer
   def self.expand_palette(colors)
     col_array = colors.to_a
     rgb_color_1 = ColorUtil.rgb_from_string(col_array[0][0])
-    rgb_color_2 = ColorUtil.rgb_from_string(col_array[-1][0])
     if col_array.length == 1
-      rgb_color_2 = [rgb_color_1[0] + Random.new.rand(0..10), rgb_color_1[1] + Random.new.rand(0..20), rgb_color_1[2] + Random.new.rand(0..30)]
+      rgb_color_2 = [rgb_color_1[0] + rand(0..10), rgb_color_1[1] + rand(0..20), rgb_color_1[2] + rand(0..30)]
+    else
+      rgb_color_2 = ColorUtil.rgb_from_string(col_array[-1][0])
     end
 
-    rgb =  [(rgb_color_1[0] + rgb_color_2[0]) / 2, (rgb_color_1[1] + rgb_color_2[1]) / 2, (rgb_color_1[2] + rgb_color_2[2]) / 2]
-    rgb.map! { |c| c.to_i.to_s(16) }
-    colors.merge!({ '#' + rgb.join('') => [1, 2] })
+    rgb =  ColorUtil.average_rgb(rgb_color_1, rgb_color_2)
+    colors.merge!(ColorUtil.rgb_to_string(rgb) => [1, 2])
   end
 
   def self.slim_palette(colors)
@@ -221,9 +211,7 @@ module Colorcake
     matrix = Matrix.build(col_array.length, col_array.length) do |row, col|
       rgb_color_1 = ColorUtil.rgb_from_string(col_array[row][0])
       rgb_color_2 = ColorUtil.rgb_from_string(col_array[col][0])
-      pixel_1 = ColorUtil.rgb_to_lab([rgb_color_1[0], rgb_color_1[1], rgb_color_1[2]])
-      pixel_2 = ColorUtil.rgb_to_lab([rgb_color_2[0], rgb_color_2[1], rgb_color_2[2]])
-      diff = ColorUtil.delta_e(pixel_1, pixel_2)
+      diff = ColorUtil.delta_e(ColorUtil.rgb_to_lab(rgb_color_1), ColorUtil.rgb_to_lab(rgb_color_2))
       if diff == 0
         100_000
       else

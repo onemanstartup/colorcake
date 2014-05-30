@@ -21,8 +21,16 @@ module ColorUtil
     color
   end
 
+  def self.rgb_to_string(rgb)
+    "#" + rgb.map! { |c| c.to_i.to_s(16) }.join('')
+  end
+
   def self.rgb_number_from_string(string)
     string.scan(/../).map { |color| color.to_i(16) }
+  end
+
+  def self.average_rgb(rgb_color_1, rgb_color_2)
+    [(rgb_color_1[0] + rgb_color_2[0]) / 2, (rgb_color_1[1] + rgb_color_2[1]) / 2, (rgb_color_1[2] + rgb_color_2[2]) / 2]
   end
 
   def self.distance_rgb_strings(rgb1, rgb2)
