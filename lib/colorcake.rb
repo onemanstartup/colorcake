@@ -179,18 +179,12 @@ module Colorcake
       common_colors[index] = []
       if index < palette.length
         palette.each do |color|
-          sr = s[0].red
-          sb = s[0].blue
-          sg = s[0].green
-          cr = color[0].red
-          cb = color[0].blue
-          cg = color[0].green
-          sr = s[0].red / 257 if s[0].red / 255 > 0
-          sb = s[0].blue / 257 if s[0].blue / 255 > 0
-          sg = s[0].green / 257 if s[0].green / 255 > 0
-          cr = color[0].red / 257 if color[0].red / 255 > 0
-          cb = color[0].blue / 257 if color[0].blue / 255 > 0
-          cg = color[0].green / 257 if color[0].green / 255 > 0
+          sr = normalize_color s[0].red
+          sb = normalize_color s[0].blue
+          sg = normalize_color s[0].green
+          cr = normalize_color color[0].red
+          cb = normalize_color color[0].blue
+          cg = normalize_color color[0].green
           new_delta =  ColorUtil.delta_e(ColorUtil.rgb_to_lab([sr, sb, sg]),
                                           ColorUtil.rgb_to_lab([cr, cb, cg]))
           if new_delta < delta
@@ -213,10 +207,14 @@ module Colorcake
             old_palette.tap { |hs| hs.delete(col[0]) }
           end
         end
-      else
       end
     end
     new_palette
+  end
+
+  def self.normalize_color(color)
+    color = color / 257 if color / 255 > 0
+    color
   end
 
   def self.expand_palette(colors)
