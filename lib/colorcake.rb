@@ -58,18 +58,15 @@ module Colorcake
   end
 
   @new_palette = []
-  @old_palette = {}
 
   def self.extract_colors(src, colorspace = ::Magick::RGBColorspace)
     @new_palette = []
-    @old_palette = {}
     colors = {}
     colors_hex = {}
-    palette = compute_palette(src)
+    palette = compute_palette(src, @colors_count)
     palette = color_quantity_in_image(palette)
-    @old_palette = palette
     @new_palette = []
-    remove_common_color_from_palette(palette)
+    @new_palette = remove_common_color_from_palette(palette, @delta)
     (0..@new_palette.length - 1).each do |i|
       c = @new_palette[i][0].to_s.split(',').map { |x| x[/\d+/] }
       b = compute_b(c)
@@ -77,10 +74,12 @@ module Colorcake
       percentage = @new_palette[i][1][1]
       colors_hex['#' + c.join('')] = @new_palette[i][1]
 
-      # Disable when not working with Database
-      id = SearchColor.find_or_create_by_color(closest_color[0]).id
-      # Enable when not working with Database
-      # id = @base_colors.index(closest_color[0])
+      # If we have colors defined in database
+      if defined? SearchColor
+        id = SearchColor.find_or_create_by_color(closest_color[0]).id
+      else
+        id = @base_colors.index(closest_color[0])
+      end
 
       colors[id] ||= {}
       colors[id][:search_color_id] ||= id
@@ -156,9 +155,9 @@ module Colorcake
     palette
   end
 
-  def self.compute_palette(src_of_image)
+  def self.compute_palette(src_of_image, colors_count)
     image = ::Magick::ImageList.new(src_of_image)
-    image = image.quantize(@colors_count, Magick::YIQColorspace)
+    image = image.quantize(colors_count, Magick::YIQColorspace)
     palette = image.color_histogram # .sort {|a, b| b[1] <=> a[1]}
     image.destroy!
     palette
@@ -170,9 +169,12 @@ module Colorcake
     array_of_vars.reduce(:+).to_i
   end
 
+  # flog 233.6
   # Use Magick::HSLColorspace or Magick::SRGBColorspace
-  def self.remove_common_color_from_palette(palette, colorspace = Magick::YIQColorspace)
+  def self.remove_common_color_from_palette(palette, delta, colorspace = Magick::YIQColorspace)
     common_colors = []
+    new_palette = []
+    old_palette = palette
     palette.each_with_index do |s, index|
       common_colors[index] = []
       if index < palette.length
@@ -189,9 +191,9 @@ module Colorcake
           cr = color[0].red / 257 if color[0].red / 255 > 0
           cb = color[0].blue / 257 if color[0].blue / 255 > 0
           cg = color[0].green / 257 if color[0].green / 255 > 0
-          delta =  ColorUtil.delta_e(ColorUtil.rgb_to_lab([sr, sb, sg]),
+          new_delta =  ColorUtil.delta_e(ColorUtil.rgb_to_lab([sr, sb, sg]),
                                           ColorUtil.rgb_to_lab([cr, cb, cg]))
-          if delta < @delta
+          if new_delta < delta
             common_colors[index] << color
             common_colors[index] << s
             common_colors[index].uniq!
@@ -205,15 +207,16 @@ module Colorcake
           end
         end
         common_colors[index].uniq!
-        @new_palette << common_colors[index].first
+        new_palette << common_colors[index].first
         common_colors[index].each_with_index do |col, ind|
           if ind != 0
-            @old_palette.tap { |hs| hs.delete(col[0]) }
+            old_palette.tap { |hs| hs.delete(col[0]) }
           end
         end
       else
       end
     end
+    new_palette
   end
 
   def self.expand_palette(colors)
@@ -237,9 +240,6 @@ module Colorcake
       pixel_1 = ColorUtil.rgb_to_lab([rgb_color_1[0], rgb_color_1[1], rgb_color_1[2]])
       pixel_2 = ColorUtil.rgb_to_lab([rgb_color_2[0], rgb_color_2[1], rgb_color_2[2]])
       diff = ColorUtil.delta_e(pixel_1, pixel_2)
-      # c1 = ColorUtil.rgb_to_hcl(rgb_color_1[0],rgb_color_1[1],rgb_color_1[2])
-      # c2 = ColorUtil.rgb_to_hcl(rgb_color_2[0],rgb_color_2[1],rgb_color_2[2])
-      # diff = ColorUtil.distance_hcl(c1, c2)
       if diff == 0
         100_000
       else

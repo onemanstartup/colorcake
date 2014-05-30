@@ -25,6 +25,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'minitest'
   spec.add_development_dependency 'method_profiler'
   spec.add_development_dependency "ruby-prof"
+  spec.add_development_dependency 'guard'
+  spec.add_development_dependency 'guard-minitest'
 
   spec.add_dependency 'rmagick'
 end

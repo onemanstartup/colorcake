@@ -1,0 +1,79 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+Coll	lib/conversion.rb	/^module Coll$/;"	m
+ColorUtil	lib/colorcake/color_util.rb	/^module ColorUtil$/;"	m
+Colorcake	lib/colorcake.rb	/^module Colorcake$/;"	m
+Colorcake	lib/colorcake/engine.rb	/^module Colorcake$/;"	m
+Colorcake	lib/colorcake/version.rb	/^module Colorcake$/;"	m
+Colorcake	lib/generators/colorcake/install_generator.rb	/^module Colorcake$/;"	m
+Engine	lib/colorcake/engine.rb	/^  class Engine < Rails::Engine$/;"	c	class:Colorcake
+Generators	lib/generators/colorcake/install_generator.rb	/^  module Generators$/;"	m	class:Colorcake
+InstallGenerator	lib/generators/colorcake/install_generator.rb	/^    class InstallGenerator < Rails::Generators::Base$/;"	c	class:Colorcake.Generators
+MergeColorsMethods	lib/colorcake/merge_colors_methods.rb	/^module MergeColorsMethods$/;"	m
+Pixelator	lib/additional.rb	/^  class Pixelator$/;"	c	class:Pxls
+Pxls	lib/additional.rb	/^module Pxls$/;"	m
+atan	lib/colorcake/color_util.rb	/^  def self.atan(x, y)$/;"	F	class:ColorUtil
+brightness	lib/additional.rb	/^    def brightness(formula=:w3c)$/;"	f
+closest_color_to	lib/colorcake.rb	/^  def self.closest_color_to(b)$/;"	F
+color_quantity_in_image	lib/colorcake.rb	/^  def self.color_quantity_in_image(palette)$/;"	F
+compute_b	lib/colorcake.rb	/^  def self.compute_b(c)$/;"	F
+compute_palette	lib/colorcake.rb	/^  def self.compute_palette(src_of_image, colors_count)$/;"	F
+configure	lib/colorcake.rb	/^    def configure(&blk)$/;"	f	class:Colorcake
+contrast_with	lib/additional.rb	/^    def contrast_with(other_color, formula=:w3c)$/;"	f
+copy_initializer	lib/generators/colorcake/install_generator.rb	/^      def copy_initializer$/;"	f	class:Colorcake.Generators.InstallGenerator
+create_palette	lib/colorcake.rb	/^  def self.create_palette(colors)$/;"	F
+deg2rad	lib/colorcake/color_util.rb	/^  def self.deg2rad(d)$/;"	F	class:ColorUtil
+delta_e	lib/colorcake/color_util.rb	/^  def self.delta_e(one, other, method=:cie2k)$/;"	F	class:ColorUtil
+distance_hcl	lib/colorcake/color_util.rb	/^  def self.distance_hcl( hcl1, hcl2 )$/;"	F	class:ColorUtil
+distance_rgb	lib/colorcake/color_util.rb	/^  def self.distance_rgb(rgb1, rgb2)$/;"	F	class:ColorUtil
+distance_rgb_strings	lib/colorcake/color_util.rb	/^  def self.distance_rgb_strings(rgb1, rgb2)$/;"	F	class:ColorUtil
+euclid_distance_rgb	lib/colorcake/color_util.rb	/^  def self.euclid_distance_rgb(rgb1, rgb2)$/;"	F	class:ColorUtil
+expand_palette	lib/colorcake.rb	/^  def self.expand_palette(colors)$/;"	F
+extract_colors	lib/colorcake.rb	/^  def self.extract_colors(src, colorspace = ::Magick::RGBColorspace)$/;"	F
+find_position_in_matrix_of_closest_color	lib/colorcake.rb	/^  def self.find_position_in_matrix_of_closest_color(matrix)$/;"	F
+function_lab	lib/colorcake/color_util.rb	/^  def self.function_lab(t)$/;"	F	class:ColorUtil
+generate_factor	lib/colorcake.rb	/^  def self.generate_factor(array_of_vars)$/;"	F
+get_colors	lib/additional.rb	/^    def get_colors(n=6, remove_bg=true)$/;"	f	class:Pxls.Pixelator
+hcl_cl_merge	lib/colorcake/merge_colors_methods.rb	/^  def self.hcl_cl_merge(colors)$/;"	F	class:MergeColorsMethods
+hsl_sl_merge	lib/colorcake/merge_colors_methods.rb	/^  def self.hsl_sl_merge(colors)$/;"	F	class:MergeColorsMethods
+initialize	lib/additional.rb	/^    def initialize(img_location)$/;"	f	class:Pxls.Pixelator
+intensity_merge	lib/colorcake/merge_colors_methods.rb	/^  def self.intensity_merge(colors)$/;"	F	class:MergeColorsMethods
+invert	lib/additional.rb	/^    def invert$/;"	f
+lab_chroma	lib/colorcake/color_util.rb	/^  def self.lab_chroma(a,b)$/;"	F	class:ColorUtil
+lab_hue	lib/colorcake/color_util.rb	/^  def self.lab_hue(a, b)$/;"	F	class:ColorUtil
+lab_merge	lib/colorcake/merge_colors_methods.rb	/^  def self.lab_merge(colors)$/;"	F	class:MergeColorsMethods
+luminance_merge	lib/colorcake/merge_colors_methods.rb	/^  def self.luminance_merge(colors)$/;"	F	class:MergeColorsMethods
+normalize	lib/colorcake/color_util.rb	/^  def self.normalize(v)$/;"	F	class:ColorUtil
+percentage_merge	lib/colorcake/merge_colors_methods.rb	/^def self.percentage_merge(colors)$/;"	F	class:MergeColorsMethods
+rad2deg	lib/colorcake/color_util.rb	/^  def self.rad2deg(r)$/;"	F	class:ColorUtil
+reduce_size	lib/additional.rb	/^    def reduce_size(width, height)$/;"	f	class:Pxls.Pixelator
+remove_bg	lib/additional.rb	/^    def remove_bg(nc, fuzz=20)$/;"	f	class:Pxls.Pixelator
+remove_common_color_from_palette	lib/colorcake.rb	/^  def self.remove_common_color_from_palette(palette, delta, colorspace = Magick::YIQColorspace)$/;"	F
+rgb_from_string	lib/colorcake/color_util.rb	/^  def self.rgb_from_string(string)$/;"	F	class:ColorUtil
+rgb_number_from_string	lib/colorcake/color_util.rb	/^  def self.rgb_number_from_string(string)$/;"	F	class:ColorUtil
+rgb_to_hcl	lib/colorcake/color_util.rb	/^  def self.rgb_to_hcl(rgb)$/;"	F	class:ColorUtil
+rgb_to_hcl	lib/conversion.rb	/^  def rgb_to_hcl$/;"	f	class:Coll
+rgb_to_hsv	lib/conversion.rb	/^  def self.rgb_to_hsv(r,g,b)$/;"	F	class:Coll
+rgb_to_lab	lib/colorcake/color_util.rb	/^  def self.rgb_to_lab(rgb)$/;"	F	class:ColorUtil
+rgb_to_lab	lib/conversion.rb	/^  def rgb_to_lab$/;"	f	class:Coll
+rgb_to_lab_bad	lib/colorcake/color_util.rb	/^  def self.rgb_to_lab_bad(rgb)$/;"	F	class:ColorUtil
+rgb_to_yuv	lib/colorcake/color_util.rb	/^  def self.rgb_to_yuv(rgb)$/;"	F	class:ColorUtil
+rgb_to_yuv	lib/conversion.rb	/^  def rgb_to_yuv$/;"	f	class:Coll
+rgb_to_yuv_2	lib/colorcake/color_util.rb	/^  def self.rgb_to_yuv_2(rgb)$/;"	F	class:ColorUtil
+rgb_to_yuv_2	lib/conversion.rb	/^  def rgb_to_yuv_2$/;"	f	class:Coll
+run	lib/conversion.rb	/^def run$/;"	f
+slim_palette	lib/colorcake.rb	/^  def self.slim_palette(colors)$/;"	F
+source_root	lib/generators/colorcake/install_generator.rb	/^      def self.source_root$/;"	F	class:Colorcake.Generators.InstallGenerator
+sum_of_hash	lib/colorcake.rb	/^  def self.sum_of_hash(hash)$/;"	F
+text_color	lib/additional.rb	/^def text_color(threshold=0.6, formula=:standard)$/;"	f
+to_grayscale	lib/additional.rb	/^    def to_grayscale(formula=:w3c)$/;"	f
+to_hex	lib/additional.rb	/^    def to_hex(pixel)$/;"	f	class:Pxls.Pixelator
+to_hsl	lib/colorcake/color_util.rb	/^  def self.to_hsl(r,g,b)$/;"	F	class:ColorUtil
+to_hsl	lib/conversion.rb	/^  def to_hsl$/;"	f	class:Coll
+to_hsv	lib/additional.rb	/^    def to_hsv$/;"	f
+to_hsv	lib/conversion.rb	/^  def self.to_hsv(r,g,b)$/;"	F	class:Coll
+to_pixels	lib/additional.rb	/^    def to_pixels(colors)$/;"	f	class:Pxls.Pixelator
