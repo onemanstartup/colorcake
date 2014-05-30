@@ -139,9 +139,9 @@ module Colorcake
   end
 
   def self.color_quantity_in_image(palette)
-    sum_of_pixels = sum_of_hash(palette)
+    sum_of_pixels_percent = sum_of_hash(palette).to_f / 100
     palette.each do |k, v|
-      palette[k] = [v, v / (sum_of_pixels.to_f / 100)]
+      palette[k] = [v, v / sum_of_pixels_percent]
     end
     palette
   end
