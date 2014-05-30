@@ -169,7 +169,7 @@ module Colorcake
     array_of_vars.reduce(:+).to_i
   end
 
-  # flog 233.6
+  # flog 105.6
   # Use Magick::HSLColorspace or Magick::SRGBColorspace
   def self.remove_common_color_from_palette(palette, delta, colorspace = Magick::YIQColorspace)
     common_colors = []
@@ -186,18 +186,19 @@ module Colorcake
           cb = normalize_color color[0].blue
           cg = normalize_color color[0].green
           new_delta =  ColorUtil.delta_e(ColorUtil.rgb_to_lab([sr, sb, sg]),
-                                          ColorUtil.rgb_to_lab([cr, cb, cg]))
+                                         ColorUtil.rgb_to_lab([cr, cb, cg]))
           if new_delta < delta
             common_colors[index] << color
             common_colors[index] << s
             common_colors[index].uniq!
 
-            if common_colors[index].first[1][1] && common_colors[index].first[1][1] != color[1][1]
-              common_colors[index].first[1][1] += color[1][1]
-            elsif common_colors[index].first[1][1] == color[1][1]
-              common_colors[index].first[1][1] = color[1][1]
-            else
+            common_color = common_colors[index].first[1][1]
+            return unless common_color
+            search_color = color[1][1]
+            if common_color != search_color
+              common_colors[index].first[1][1] += search_color
             end
+
           end
         end
         common_colors[index].uniq!
